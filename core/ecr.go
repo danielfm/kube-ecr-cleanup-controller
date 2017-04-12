@@ -14,12 +14,16 @@ type ECRClientImpl struct {
 	ECRClient *ecr.ECR
 }
 
+// ECRClient defines the expected interface of any object capable of
+// listing and removing images from a ECR repository.
 type ECRClient interface {
 	ListRepositories(repositoryNames []*string) ([]*ecr.Repository, error)
 	ListImages(repositoryName *string) ([]*ecr.ImageDetail, error)
 	BatchRemoveImages(repositoryName *string, images []*ecr.ImageDetail) error
 }
 
+// ImagesByPushDate lets us sort ECR images by push date so that we can
+// delete old images.
 type ImagesByPushDate []*ecr.ImageDetail
 
 func (slice ImagesByPushDate) Len() int {
@@ -36,6 +40,9 @@ func (slice ImagesByPushDate) Swap(i, j int) {
 	slice[i], slice[j] = slice[j], slice[i]
 }
 
+// NewECRClient returns a new client for interacting with the ECR API. The
+// credentials are retrieved from environment variables or from the
+// `~/.aws/credentials` file.
 func NewECRClient(region string) (*ECRClientImpl, error) {
 	creds := credentials.NewChainCredentials(
 		[]credentials.Provider{
@@ -54,6 +61,7 @@ func NewECRClient(region string) (*ECRClientImpl, error) {
 	}, nil
 }
 
+// ListRepositories returns the data belonging to the given repository names.
 func (c *ECRClientImpl) ListRepositories(repositoryNames []*string) ([]*ecr.Repository, error) {
 	repos := []*ecr.Repository{}
 
@@ -74,6 +82,8 @@ func (c *ECRClientImpl) ListRepositories(repositoryNames []*string) ([]*ecr.Repo
 	return repos, nil
 }
 
+// ListImages returns data from all images stored in the repository identified
+// by the given repository name.
 func (c *ECRClientImpl) ListImages(repositoryName *string) ([]*ecr.ImageDetail, error) {
 	images := []*ecr.ImageDetail{}
 
@@ -94,6 +104,8 @@ func (c *ECRClientImpl) ListImages(repositoryName *string) ([]*ecr.ImageDetail, 
 	return images, nil
 }
 
+// BatchRemoveImages deletes all the given images from the repository identified
+// by the given repository name in one go.
 func (c *ECRClientImpl) BatchRemoveImages(repositoryName *string, images []*ecr.ImageDetail) error {
 
 	// No images to be removed
@@ -119,6 +131,7 @@ func (c *ECRClientImpl) BatchRemoveImages(repositoryName *string, images []*ecr.
 		return err
 	}
 
+	// Aggregates all failures in a single error message for convenience
 	if len(output.Failures) > 0 {
 		msg := "Failed to remove the following images: \n\n"
 
@@ -132,6 +145,8 @@ func (c *ECRClientImpl) BatchRemoveImages(repositoryName *string, images []*ecr.
 	return nil
 }
 
+// SortImagesByPushDate uses the `ImagesByPushDate` type to sort the given slice
+// of ECR image objects.
 func SortImagesByPushDate(images []*ecr.ImageDetail) {
 	var imagesByDate ImagesByPushDate
 	imagesByDate = images
@@ -139,6 +154,10 @@ func SortImagesByPushDate(images []*ecr.ImageDetail) {
 	sort.Sort(imagesByDate)
 }
 
+// FilterOldUnusedImages goes through the given list of ECR images and returns
+// another list of images (giving priority to older images) that are not in use.
+// The filtered images, when removed, will bring the number of images stored in
+// the repository down to the number specified in `keepMax`.
 func FilterOldUnusedImages(keepMax int, repoImages []*ecr.ImageDetail, tagsInUse []string) []*ecr.ImageDetail {
 	unusedImages := []*ecr.ImageDetail{}
 

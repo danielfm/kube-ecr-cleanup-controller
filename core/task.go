@@ -1,5 +1,6 @@
 package core
 
+// CleanupTask encapsulates the input parameters for the clean-up code.
 type CleanupTask struct {
 
 	// Interval in which the clean-up process will happen, in minutes.
