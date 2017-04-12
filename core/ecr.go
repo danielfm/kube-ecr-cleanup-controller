@@ -162,7 +162,7 @@ func FilterOldUnusedImages(keepMax int, repoImages []*ecr.ImageDetail, tagsInUse
 	unusedImages := []*ecr.ImageDetail{}
 
 	// There's no need to remove any images for now
-	if keepMax > len(repoImages) {
+	if keepMax >= len(repoImages) {
 		return []*ecr.ImageDetail{}
 	}
 
@@ -188,5 +188,5 @@ repoImagesLoop:
 
 	// Returns the oldest images that are not in use that, when deleted,
 	// will bring the number of images down to the specified theshold
-	return unusedImages[:(len(unusedImages) - keepMax + 1)]
+	return unusedImages[:(len(unusedImages) - keepMax)]
 }
