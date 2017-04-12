@@ -1,0 +1,14 @@
+package: github.com/danielfm/kube-ecr-cleanup-controller
+import:
+- package: github.com/aws/aws-sdk-go
+  version: ^1.8.10
+  subpackages:
+  - aws
+  - aws/credentials
+  - aws/session
+  - service/ecr
+- package: github.com/golang/glog
+- package: k8s.io/client-go
+  subpackages:
+  - kubernetes
+  - rest
