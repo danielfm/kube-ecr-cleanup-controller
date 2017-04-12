@@ -2,29 +2,32 @@
 
 AWS limits the number of images per ECR repository to 1000. This is not a
 problem for low-activity projects, but if you have a full-fledged continuous
-pipeline in place that pushes new images to a repository at every new commit,
-this limit will require you to periodically remove old images in order to create
-room for new ones.
+delivery pipeline in place that pushes images to a repository at every new
+commit, sooner or later this limit will require you to periodically remove old
+images in order to create room for new ones.
 
-This controller handles the task of automatically keeping the number of images
+This controller handles this task of automatically keeping the number of images
 in a ECR repository under some specified threshold.
 
 **Notice:** This project is still WIP, do not use in production.
 
 ## How it Works
 
-First, the controller will get the list of currently running pods from the
-specified namespaces, in order to see which ECR image is in use.
+First, the controller will query the Kubernetes API server to get the list of
+currently running pods from the specified namespaces in order to see which ECR
+images are currently in use.
 
-Then, it will load the contents of the specified repositories, sort those images
-by push date, and remove from this list the images currently in use. This step
-is very important as it ensures images in use _are not accidentally deleted_.
+Then, it will load the contents of the specified ECR repositories, sort those
+images by push date, and remove from this list the images currently in use.
+This step is very important as it ensures images in use _are not accidentally
+deleted_.
 
 Finally, it will remove the oldest images from this list.
 
-### Flags
+## Flags
 
 ```
+$ ./kube-ecr-cleanup-controller -h
 Usage of ./kube-ecr-cleanup-controller:
   -alsologtostderr
     	log to standard error as well as files
