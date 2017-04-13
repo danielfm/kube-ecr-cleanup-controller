@@ -1,6 +1,7 @@
 # K8S ECR Cleanup Controller
 
 [![Build Status](https://travis-ci.org/danielfm/kube-ecr-cleanup-controller.svg?branch=master)](https://travis-ci.org/danielfm/kube-ecr-cleanup-controller)
+[![codecov](https://codecov.io/gh/danielfm/kube-ecr-cleanup-controller/branch/master/graph/badge.svg)](https://codecov.io/gh/danielfm/kube-ecr-cleanup-controller)
 
 AWS limits the number of images per ECR repository to 1000. This is not a
 problem for low-activity projects, but if you have a full-fledged continuous
