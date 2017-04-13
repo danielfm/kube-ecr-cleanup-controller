@@ -13,7 +13,8 @@ type mockECRClient struct {
 	t *testing.T
 	ecriface.ECRAPI
 
-	expectedListRepositoryNames []string
+	expectedListRepositoryNames      []string
+	expectedListImagesRepositoryName string
 
 	outputError error
 }
@@ -38,6 +39,37 @@ func (m *mockECRClient) DescribeRepositoriesPages(input *ecr.DescribeRepositorie
 		Repositories: []*ecr.Repository{
 			{
 				RepositoryName: &repositoryName,
+			},
+		},
+	}
+
+	// There's two pages, so the function must return true
+	if fn(page, false) != true {
+		m.t.Errorf("Expected callback to return true for first page, but returned false")
+	}
+
+	// This is the last page, so the function must return false
+	if fn(page, true) != false {
+		m.t.Errorf("Expected callback to return true for last page, but returned true")
+	}
+
+	return m.outputError
+}
+
+func (m *mockECRClient) DescribeImagesPages(input *ecr.DescribeImagesInput, fn func(*ecr.DescribeImagesOutput, bool) bool) error {
+	if input == nil {
+		m.t.Errorf("Unexpected nil input")
+	}
+
+	if *input.RepositoryName != m.expectedListImagesRepositoryName {
+		m.t.Errorf("Expected repository name to be %s, but was %s", m.expectedListImagesRepositoryName, *input.RepositoryName)
+	}
+
+	imageDigest := "image-digest"
+	page := &ecr.DescribeImagesOutput{
+		ImageDetails: []*ecr.ImageDetail{
+			{
+				ImageDigest: &imageDigest,
 			},
 		},
 	}
@@ -153,6 +185,72 @@ func TestListRepositories(t *testing.T) {
 
 	if len(repos) != 2 {
 		t.Errorf("Expected repos to contain 2 items, but it contains: %q", repos)
+	}
+}
+
+func TestListImagesWithNilRepositoryName(t *testing.T) {
+	client := ECRClientImpl{
+		ECRClient: nil, // Should not interact with the ECR client
+	}
+
+	images, err := client.ListImages(nil)
+
+	if len(images) != 0 {
+		t.Errorf("Expected images to be empty, but was not: %q", images)
+	}
+
+	if err != nil {
+		t.Errorf("Expected error to be nil, but was %v", err)
+	}
+}
+
+func TestListImagesError(t *testing.T) {
+	repoName := "repo-1"
+
+	client := ECRClientImpl{
+		ECRClient: &mockECRClient{
+			t: t,
+
+			expectedListImagesRepositoryName: repoName,
+
+			outputError: fmt.Errorf(""),
+		},
+	}
+
+	images, err := client.ListImages(&repoName)
+
+	if images != nil {
+		t.Errorf("Expected images to be nil, but was %v", images)
+	}
+
+	if err == nil {
+		t.Errorf("Expected error not to be nil, but it was")
+	}
+}
+
+func TestListImages(t *testing.T) {
+	repoName := "repo-1"
+
+	client := ECRClientImpl{
+		ECRClient: &mockECRClient{
+			t: t,
+
+			expectedListImagesRepositoryName: repoName,
+		},
+	}
+
+	images, err := client.ListImages(&repoName)
+
+	if err != nil {
+		t.Errorf("Expected error to be nil, but it was: %v", err)
+	}
+
+	if images == nil {
+		t.Errorf("Expected images not to be nil, but it was")
+	}
+
+	if len(images) != 2 {
+		t.Errorf("Expected images to contain 2 items, but it contains: %q", images)
 	}
 }
 
