@@ -9,6 +9,9 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 )
 
+// mockECRClient is used to verify that the ECR client is being called with the
+// correct arguments, and that the return values are being handled correctly by
+// its consumers.
 type mockECRClient struct {
 	t *testing.T
 	ecriface.ECRAPI
