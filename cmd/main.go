@@ -16,6 +16,9 @@ import (
 
 var task *core.CleanupTask
 
+// VERSION set by build script
+var VERSION = "UNKNOWN"
+
 func init() {
 	namespacesStr, reposStr := "default", ""
 
@@ -52,7 +55,7 @@ func init() {
 }
 
 func main() {
-	glog.Infof("Kubernetes ECR Image Cleanup Controller started, will run every %d minute(s).", task.Interval)
+	glog.Infof("Kubernetes ECR Image Cleanup Controller v%s started, will run every %d minute(s).", VERSION, task.Interval)
 
 	doneChan := make(chan struct{})
 	var wg sync.WaitGroup

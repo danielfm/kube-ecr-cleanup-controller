@@ -5,7 +5,7 @@ IMAGE=danielfm/$(BIN)
 
 .PHONY: build
 build:
-	$(GO) build -a --ldflags '-w -extldflags "-static"' -tags netgo -o bin/$(BIN) ./cmd
+	$(GO) build -a --ldflags "-X main.VERSION=$(TAG) -w -extldflags '-static'" -tags netgo -o bin/$(BIN) ./cmd
 
 .PHONY: image
 image: build
