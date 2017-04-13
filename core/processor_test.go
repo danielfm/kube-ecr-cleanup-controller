@@ -182,7 +182,55 @@ func TestRemoveOldImagesWithECRListImagesError(t *testing.T) {
 }
 
 func TestRemoveOldImagesWithoutOldImagesToRemove(t *testing.T) {
-	// TODO
+	namespace, repoName, imageDigest := "namespace", "repo", "image-digest"
+	kubeClient := &mockKubeClient{
+		t: t,
+
+		expectedNamespace: []string{namespace},
+		listAllPodsResult: []*v1.Pod{
+			{
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						{
+							Image: "id.dkr.ecr.region.amazonaws.com/repo:tag-1",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	ecrClient := &mockECRClient{
+		t: t,
+
+		expectedRepositoryNames: []string{repoName},
+		listRepositoriesResult: []*ecr.Repository{
+			{
+				RepositoryName: &repoName,
+			},
+		},
+
+		expectedImagesRepositoryName: repoName,
+		listImagesResult: []*ecr.ImageDetail{
+			{
+				ImageDigest: &imageDigest,
+			},
+		},
+	}
+
+	task := &CleanupTask{
+		KubeNamespaces:  []*string{&namespace},
+		EcrRepositories: []*string{&repoName},
+
+		// No need to clean up any images
+		MaxImages: 1000,
+	}
+
+	errs := task.RemoveOldImages(kubeClient, ecrClient)
+
+	if len(errs) != 0 {
+		t.Errorf("Expected errors to be empty, but is %q", errs)
+	}
 }
 
 func TestRemoveOldImagesWithECRBatchRemoveImagesError(t *testing.T) {
