@@ -67,15 +67,15 @@ func (t *CleanupTask) RemoveOldImages(kubeClient KubernetesClient, ecrClient ECR
 		}
 		glog.Infof("Number of images in ECR repo: %d", len(images))
 
-		unusedImages := FilterOldUnusedImages(t.MaxImages, images, usedImages[repoName])
+		unusedOldImages := FilterOldUnusedImages(t.MaxImages, images, usedImages[repoName])
 
-		if len(unusedImages) == 0 {
+		if len(unusedOldImages) == 0 {
 			glog.Info("There's no old unused images to remove. Continuing.")
 			continue
 		}
 
-		glog.Infof("Removing %d old unused images.", len(unusedImages))
-		if err = ecrClient.BatchRemoveImages(unusedImages); err != nil {
+		glog.Infof("Removing %d old unused images.", len(unusedOldImages))
+		if err = ecrClient.BatchRemoveImages(unusedOldImages); err != nil {
 			errors = append(errors, fmt.Errorf("Could not batch remove images from repo '%s': %v", repoName, err))
 			continue
 		}
