@@ -1,7 +1,7 @@
 GO=CGO_ENABLED=0 go
 TAG=0.1.0
 BIN=kube-ecr-cleanup-controller
-IMAGE=307424997672.dkr.ecr.us-east-1.amazonaws.com/$(BIN)
+IMAGE=danielfm/$(BIN)
 
 .PHONY: build
 build:
