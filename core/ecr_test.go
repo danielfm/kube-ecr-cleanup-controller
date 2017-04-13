@@ -13,8 +13,8 @@ type mockECRClient struct {
 	t *testing.T
 	ecriface.ECRAPI
 
-	expectedListRepositoryNames      []string
-	expectedListImagesRepositoryName string
+	expectedRepositoryNames []string
+	expectedImageDigests    []string
 
 	outputError error
 }
@@ -24,13 +24,13 @@ func (m *mockECRClient) DescribeRepositoriesPages(input *ecr.DescribeRepositorie
 		m.t.Errorf("Unexpected nil input")
 	}
 
-	if len(input.RepositoryNames) != len(m.expectedListRepositoryNames) {
-		m.t.Errorf("Expected number of repository names was %d, but the actual value was %d", len(m.expectedListRepositoryNames), len(input.RepositoryNames))
+	if len(input.RepositoryNames) != len(m.expectedRepositoryNames) {
+		m.t.Errorf("Expected number of repository names was %d, but the actual value was %d", len(m.expectedRepositoryNames), len(input.RepositoryNames))
 	}
 
 	for i := range input.RepositoryNames {
-		if *input.RepositoryNames[i] != m.expectedListRepositoryNames[i] {
-			m.t.Errorf("Expected repository name in idx %d to be %v, but was %v", i, m.expectedListRepositoryNames[i], *input.RepositoryNames[i])
+		if *input.RepositoryNames[i] != m.expectedRepositoryNames[i] {
+			m.t.Errorf("Expected repository name in idx %d to be %v, but was %v", i, m.expectedRepositoryNames[i], *input.RepositoryNames[i])
 		}
 	}
 
@@ -61,8 +61,8 @@ func (m *mockECRClient) DescribeImagesPages(input *ecr.DescribeImagesInput, fn f
 		m.t.Errorf("Unexpected nil input")
 	}
 
-	if *input.RepositoryName != m.expectedListImagesRepositoryName {
-		m.t.Errorf("Expected repository name to be %s, but was %s", m.expectedListImagesRepositoryName, *input.RepositoryName)
+	if *input.RepositoryName != m.expectedRepositoryNames[0] {
+		m.t.Errorf("Expected repository name to be %s, but was %s", m.expectedRepositoryNames[0], *input.RepositoryName)
 	}
 
 	imageDigest := "image-digest"
@@ -85,6 +85,28 @@ func (m *mockECRClient) DescribeImagesPages(input *ecr.DescribeImagesInput, fn f
 	}
 
 	return m.outputError
+}
+
+func (m *mockECRClient) BatchDeleteImage(input *ecr.BatchDeleteImageInput) (*ecr.BatchDeleteImageOutput, error) {
+	if input == nil {
+		m.t.Errorf("Unexpected nil input")
+	}
+
+	if *input.RepositoryName != m.expectedRepositoryNames[0] {
+		m.t.Errorf("Expected repository name to be %s, but was %s", m.expectedRepositoryNames[0], *input.RepositoryName)
+	}
+
+	if len(input.ImageIds) != len(m.expectedImageDigests) {
+		m.t.Errorf("Expected delete with %d images, but got %d", len(m.expectedImageDigests), len(input.ImageIds))
+	}
+
+	for i := range input.ImageIds {
+		if *input.ImageIds[i].ImageDigest != m.expectedImageDigests[i] {
+			m.t.Errorf("Expected image digest of image in idx %d to be %v, but was %v", i, m.expectedImageDigests, *input.ImageIds[i].ImageDigest)
+		}
+	}
+
+	return nil, m.outputError
 }
 
 func TestSortImagesByPushDate(t *testing.T) {
@@ -145,7 +167,7 @@ func TestListRepositoriesError(t *testing.T) {
 		ECRClient: &mockECRClient{
 			t: t,
 
-			expectedListRepositoryNames: repoNames,
+			expectedRepositoryNames: repoNames,
 
 			outputError: fmt.Errorf(""),
 		},
@@ -169,7 +191,7 @@ func TestListRepositories(t *testing.T) {
 		ECRClient: &mockECRClient{
 			t: t,
 
-			expectedListRepositoryNames: repoNames,
+			expectedRepositoryNames: repoNames,
 		},
 	}
 
@@ -211,7 +233,7 @@ func TestListImagesError(t *testing.T) {
 		ECRClient: &mockECRClient{
 			t: t,
 
-			expectedListImagesRepositoryName: repoName,
+			expectedRepositoryNames: []string{repoName},
 
 			outputError: fmt.Errorf(""),
 		},
@@ -235,7 +257,7 @@ func TestListImages(t *testing.T) {
 		ECRClient: &mockECRClient{
 			t: t,
 
-			expectedListImagesRepositoryName: repoName,
+			expectedRepositoryNames: []string{repoName},
 		},
 	}
 
@@ -251,6 +273,93 @@ func TestListImages(t *testing.T) {
 
 	if len(images) != 2 {
 		t.Errorf("Expected images to contain 2 items, but it contains: %q", images)
+	}
+}
+
+func TestBatchRemoveImagesWithEmptyImages(t *testing.T) {
+	client := ECRClientImpl{
+		ECRClient: nil, // Should not interact with the ECR client
+	}
+
+	err := client.BatchRemoveImages([]*ecr.ImageDetail{})
+
+	if err != nil {
+		t.Errorf("Expected error to be nil, but was %v", err)
+	}
+}
+
+func TestBatchRemoveImagesFromDifferentRepos(t *testing.T) {
+	repoNames := []string{"repo-1", "repo-2"}
+
+	client := ECRClientImpl{
+		ECRClient: nil, // Should not interact with the ECR client
+	}
+
+	err := client.BatchRemoveImages([]*ecr.ImageDetail{
+		{
+			RepositoryName: &repoNames[0],
+		},
+		{
+			RepositoryName: &repoNames[1],
+		},
+	})
+
+	if err == nil {
+		t.Errorf("Expected error not to be nil, but it was")
+	}
+}
+
+func TestBatchRemoveImagesError(t *testing.T) {
+	repoName, digest := "repo-1", "digest-1"
+
+	images := []*ecr.ImageDetail{
+		{
+			ImageDigest:    &digest,
+			RepositoryName: &repoName,
+		},
+	}
+
+	client := ECRClientImpl{
+		ECRClient: &mockECRClient{
+			t: t,
+
+			expectedRepositoryNames: []string{repoName},
+			expectedImageDigests:    []string{digest},
+
+			outputError: fmt.Errorf(""),
+		},
+	}
+
+	err := client.BatchRemoveImages(images)
+
+	if err == nil {
+		t.Errorf("Expected error not to be nil, but it was")
+	}
+}
+
+func TestBatchRemoveImages(t *testing.T) {
+	repoName, digest := "repo-1", "digest-1"
+
+	images := []*ecr.ImageDetail{
+		{
+			ImageDigest:    &digest,
+			RepositoryName: &repoName,
+		},
+	}
+
+	client := ECRClientImpl{
+		ECRClient: &mockECRClient{
+			t: t,
+
+			expectedRepositoryNames: []string{repoName},
+			expectedImageDigests:    []string{digest},
+		},
+	}
+
+	err := client.BatchRemoveImages(images)
+
+	if err != nil {
+		t.Errorf("Expected error to be nil, but was %v", err)
 	}
 }
 

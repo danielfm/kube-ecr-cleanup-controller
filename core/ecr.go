@@ -142,20 +142,9 @@ func (c *ECRClientImpl) BatchRemoveImages(images []*ecr.ImageDetail) error {
 		ImageIds:       imageIds,
 	}
 
-	output, err := c.ECRClient.BatchDeleteImage(input)
+	_, err := c.ECRClient.BatchDeleteImage(input)
 	if err != nil {
 		return err
-	}
-
-	// Aggregates all failures in a single error message for convenience
-	if len(output.Failures) > 0 {
-		msg := "Failed to remove the following images: \n\n"
-
-		for _, failure := range output.Failures {
-			msg += fmt.Sprintf("Error %d (%s): %s\n", failure.FailureCode, failure.ImageId.ImageDigest, failure.FailureReason)
-		}
-
-		return fmt.Errorf(msg)
 	}
 
 	return nil
