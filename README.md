@@ -25,6 +25,38 @@ deleted_.
 
 Finally, it will remove the oldest images from this list.
 
+### AWS Credentials
+
+For the controller to work, it must have access to AWS credentials in
+`~/.aws/credentials`, or via the environment variables `AWS_ACCESS_KEY_ID` and
+`AWS_SECRET_ACCESS_KEY`.
+
+The following IAM policy describes which actions the user must be able to
+perform in order for the controller to work:
+
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ecr:BatchDeleteImage",
+                "ecr:DescribeRepositories",
+                "ecr:ListImages",
+                "ecr:DescribeImages"
+            ],
+            "Resource": [
+                "arn:aws:ecr:us-east-1:<id>:*"
+            ]
+        }
+    ]
+}
+```
+
+Make sure to set the `Resources` correctly for all ECR repos you intend to
+clean up with this controller.
+
 ## Flags
 
 ```
