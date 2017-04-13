@@ -1,11 +1,59 @@
 package core
 
 import (
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/aws/aws-sdk-go/service/ecr"
+	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 )
+
+type mockECRClient struct {
+	t *testing.T
+	ecriface.ECRAPI
+
+	expectedListRepositoryNames []string
+
+	outputError error
+}
+
+func (m *mockECRClient) DescribeRepositoriesPages(input *ecr.DescribeRepositoriesInput, fn func(*ecr.DescribeRepositoriesOutput, bool) bool) error {
+	if input == nil {
+		m.t.Errorf("Unexpected nil input")
+	}
+
+	if len(input.RepositoryNames) != len(m.expectedListRepositoryNames) {
+		m.t.Errorf("Expected number of repository names was %d, but the actual value was %d", len(m.expectedListRepositoryNames), len(input.RepositoryNames))
+	}
+
+	for i := range input.RepositoryNames {
+		if *input.RepositoryNames[i] != m.expectedListRepositoryNames[i] {
+			m.t.Errorf("Expected repository name in idx %d to be %v, but was %v", i, m.expectedListRepositoryNames[i], *input.RepositoryNames[i])
+		}
+	}
+
+	repositoryName := "repo-name"
+	page := &ecr.DescribeRepositoriesOutput{
+		Repositories: []*ecr.Repository{
+			{
+				RepositoryName: &repositoryName,
+			},
+		},
+	}
+
+	// There's two pages, so the function must return true
+	if fn(page, false) != true {
+		m.t.Errorf("Expected callback to return true for first page, but returned false")
+	}
+
+	// This is the last page, so the function must return false
+	if fn(page, true) != false {
+		m.t.Errorf("Expected callback to return true for last page, but returned true")
+	}
+
+	return m.outputError
+}
 
 func TestSortImagesByPushDate(t *testing.T) {
 	orderedTime := []time.Time{
@@ -39,6 +87,72 @@ func TestSortImagesByPushDate(t *testing.T) {
 		if *ecrImages[i].ImagePushedAt != expectedDate {
 			t.Errorf("Expected ercImages[%d] timestamp to be %+v, but was %+v", i, expectedDate, actualDate)
 		}
+	}
+}
+
+func TestListRepositoriesWithEmptyRepos(t *testing.T) {
+	client := ECRClientImpl{
+		ECRClient: nil, // Should not interact with the ECR client
+	}
+
+	repos, err := client.ListRepositories([]*string{})
+
+	if len(repos) != 0 {
+		t.Errorf("Expected repos to be empty, but was not: %q", repos)
+	}
+
+	if err != nil {
+		t.Errorf("Expected error to be nil, but was %v", err)
+	}
+}
+
+func TestListRepositoriesError(t *testing.T) {
+	repoNames := []string{"repo-1"}
+
+	client := ECRClientImpl{
+		ECRClient: &mockECRClient{
+			t: t,
+
+			expectedListRepositoryNames: repoNames,
+
+			outputError: fmt.Errorf(""),
+		},
+	}
+
+	repos, err := client.ListRepositories([]*string{&repoNames[0]})
+
+	if repos != nil {
+		t.Errorf("Expected repos to be nil, but was %v", repos)
+	}
+
+	if err == nil {
+		t.Errorf("Expected error not to be nil, but it was")
+	}
+}
+
+func TestListRepositories(t *testing.T) {
+	repoNames := []string{"repo-1"}
+
+	client := ECRClientImpl{
+		ECRClient: &mockECRClient{
+			t: t,
+
+			expectedListRepositoryNames: repoNames,
+		},
+	}
+
+	repos, err := client.ListRepositories([]*string{&repoNames[0]})
+
+	if err != nil {
+		t.Errorf("Expected error to be nil, but it was: %v", err)
+	}
+
+	if repos == nil {
+		t.Errorf("Expected repos not to be nil, but it was")
+	}
+
+	if len(repos) != 2 {
+		t.Errorf("Expected repos to contain 2 items, but it contains: %q", repos)
 	}
 }
 

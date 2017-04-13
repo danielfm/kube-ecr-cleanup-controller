@@ -66,6 +66,10 @@ func NewECRClient(region string) *ECRClientImpl {
 func (c *ECRClientImpl) ListRepositories(repositoryNames []*string) ([]*ecr.Repository, error) {
 	repos := []*ecr.Repository{}
 
+	if len(repositoryNames) == 0 {
+		return repos, nil
+	}
+
 	input := &ecr.DescribeRepositoriesInput{
 		RepositoryNames: repositoryNames,
 	}
@@ -87,6 +91,10 @@ func (c *ECRClientImpl) ListRepositories(repositoryNames []*string) ([]*ecr.Repo
 // by the given repository name.
 func (c *ECRClientImpl) ListImages(repositoryName *string) ([]*ecr.ImageDetail, error) {
 	images := []*ecr.ImageDetail{}
+
+	if repositoryName == nil {
+		return images, nil
+	}
 
 	input := &ecr.DescribeImagesInput{
 		RepositoryName: repositoryName,
