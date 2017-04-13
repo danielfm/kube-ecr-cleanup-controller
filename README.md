@@ -12,8 +12,6 @@ images in order to create room for new ones.
 This controller handles this task of automatically keeping the number of images
 in a ECR repository under some specified threshold.
 
-**Notice:** This project is still WIP, do not use in production.
-
 ## How it Works
 
 First, the controller will query the Kubernetes API server to get the list of
