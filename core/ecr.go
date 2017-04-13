@@ -157,8 +157,10 @@ func SortImagesByPushDate(images []*ecr.ImageDetail) {
 // FilterOldUnusedImages goes through the given list of ECR images and returns
 // another list of images (giving priority to older images) that are not in use.
 // The filtered images, when removed, will bring the number of images stored in
-// the repository down to the number specified in `keepMax`.
+// the repository down to a value as close to the number specified in `keepMax`
+// as possible.
 func FilterOldUnusedImages(keepMax int, repoImages []*ecr.ImageDetail, tagsInUse []string) []*ecr.ImageDetail {
+	usedImagesFound := 0
 	unusedImages := []*ecr.ImageDetail{}
 
 	// There's no need to remove any images for now
@@ -171,6 +173,7 @@ repoImagesLoop:
 		for _, tag := range repoImage.ImageTags {
 			for _, tagInUse := range tagsInUse {
 				if tagInUse == *tag {
+					usedImagesFound++
 					continue repoImagesLoop
 				}
 			}
@@ -181,12 +184,12 @@ repoImagesLoop:
 
 	SortImagesByPushDate(unusedImages)
 
-	// Old unused images still within the maximum, so don't remove anything
-	if keepMax > len(unusedImages) {
-		return []*ecr.ImageDetail{}
+	lastImageIdx := len(unusedImages) - keepMax + usedImagesFound
+	if lastImageIdx > len(unusedImages) {
+		lastImageIdx = len(unusedImages)
 	}
 
 	// Returns the oldest images that are not in use that, when deleted,
 	// will bring the number of images down to the specified theshold
-	return unusedImages[:(len(unusedImages) - keepMax)]
+	return unusedImages[:lastImageIdx]
 }
