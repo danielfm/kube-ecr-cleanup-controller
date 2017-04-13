@@ -32,8 +32,9 @@ type mockECRClient struct {
 	listRepositoriesResult []*ecr.Repository
 	listRepositoriesError  error
 
-	listImagesResult []*ecr.ImageDetail
-	listImagesError  error
+	expectedImagesRepositoryName string
+	listImagesResult             []*ecr.ImageDetail
+	listImagesError              error
 
 	batchRemoveImagesError error
 }
@@ -67,7 +68,9 @@ func (m *mockECRClient) ListRepositories(repositoryNames []*string) ([]*ecr.Repo
 }
 
 func (m *mockECRClient) ListImages(repositoryName *string) ([]*ecr.ImageDetail, error) {
-	// TODO
+	if m.expectedImagesRepositoryName != *repositoryName {
+		m.t.Errorf("Expected repository name to be %v, but was %v", m.expectedImagesRepositoryName, *repositoryName)
+	}
 
 	return m.listImagesResult, m.listImagesError
 }
@@ -132,6 +135,53 @@ func TestRemoveOldImagesWithECRListRepositoriesError(t *testing.T) {
 }
 
 func TestRemoveOldImagesWithECRListImagesError(t *testing.T) {
+	namespace, repoName := "namespace", "repo"
+	kubeClient := &mockKubeClient{
+		t: t,
+
+		expectedNamespace: []string{namespace},
+		listAllPodsResult: []*v1.Pod{
+			{
+				Spec: v1.PodSpec{
+					Containers: []v1.Container{
+						{
+							Image: "id.dkr.ecr.region.amazonaws.com/repo:tag-1",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	ecrClient := &mockECRClient{
+		t: t,
+
+		expectedRepositoryNames: []string{repoName},
+		listRepositoriesResult: []*ecr.Repository{
+			{
+				RepositoryName: &repoName,
+			},
+		},
+
+		expectedImagesRepositoryName: repoName,
+		listImagesResult:             nil,
+		listImagesError:              fmt.Errorf(""),
+	}
+
+	task := &CleanupTask{
+		KubeNamespaces:  []*string{&namespace},
+		EcrRepositories: []*string{&repoName},
+		MaxImages:       1,
+	}
+
+	errs := task.RemoveOldImages(kubeClient, ecrClient)
+
+	if len(errs) != 1 {
+		t.Errorf("Expected errors to contain 1 element, but it contains %d", len(errs))
+	}
+}
+
+func TestRemoveOldImagesWithoutOldImagesToRemove(t *testing.T) {
 	// TODO
 }
 
