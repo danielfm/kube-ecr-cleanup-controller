@@ -88,15 +88,21 @@ func ECRImagesFromPods(pods []*v1.Pod) map[string][]string {
 					continue
 				}
 
-				encountered[container.Image] = true
-
 				repoName, imageTag := imageData[1], imageData[2]
+
+				// Ignore 'latest' tag
+				if imageTag == "latest" {
+					continue
+				}
+
 				_, ok := imagesPerRepo[repoName]
 				if ok {
 					imagesPerRepo[repoName] = append(imagesPerRepo[repoName], imageTag)
 				} else {
 					imagesPerRepo[repoName] = []string{imageTag}
 				}
+
+				encountered[container.Image] = true
 			}
 		}
 	}
