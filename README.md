@@ -23,6 +23,8 @@ images by push date, and remove from this list the images currently in use.
 This step is very important as it ensures images in use _are not accidentally
 deleted_.
 
+Also, this controller will not touch images tagged with the `latest` tag.
+
 Finally, it will remove the oldest images from this list.
 
 ### AWS Credentials
