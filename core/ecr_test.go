@@ -364,6 +364,7 @@ func TestBatchRemoveImages(t *testing.T) {
 }
 
 func TestFilterOldUnusedImages(t *testing.T) {
+	latestTag := "latest"
 	tags := []string{"tag-1", "tag-2", "tag-3", "tag-4", "tag-5"}
 
 	orderedTime := []time.Time{
@@ -438,6 +439,32 @@ func TestFilterOldUnusedImages(t *testing.T) {
 				{
 					ImagePushedAt: &orderedTime[0],
 				},
+				{
+					ImagePushedAt: &orderedTime[1],
+				},
+				{
+					ImagePushedAt: &orderedTime[2],
+				},
+			},
+		},
+
+		// Should return all images but the one with 'latest' tag
+		{
+			keepMax:   0,
+			tagsInUse: []string{},
+			images: []*ecr.ImageDetail{
+				{
+					ImagePushedAt: &orderedTime[2],
+				},
+				{
+					ImagePushedAt: &orderedTime[1],
+				},
+				{
+					ImagePushedAt: &orderedTime[0],
+					ImageTags:     []*string{&latestTag},
+				},
+			},
+			oldImages: []*ecr.ImageDetail{
 				{
 					ImagePushedAt: &orderedTime[1],
 				},

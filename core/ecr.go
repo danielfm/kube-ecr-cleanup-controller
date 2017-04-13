@@ -176,6 +176,10 @@ func FilterOldUnusedImages(keepMax int, repoImages []*ecr.ImageDetail, tagsInUse
 repoImagesLoop:
 	for _, repoImage := range repoImages {
 		for _, tag := range repoImage.ImageTags {
+			if *tag == "latest" {
+				continue repoImagesLoop
+			}
+
 			for _, tagInUse := range tagsInUse {
 				if tagInUse == *tag {
 					usedImagesFound++
