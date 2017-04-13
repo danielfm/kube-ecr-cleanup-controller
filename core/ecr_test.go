@@ -182,7 +182,7 @@ func TestFilterOldUnusedImages(t *testing.T) {
 			images: []*ecr.ImageDetail{
 				{
 					ImagePushedAt: &orderedTime[2],
-					ImageTags:     []*string{&tags[2]},
+					ImageTags:     []*string{&tags[2], &tags[2]}, // Intentionally inconsistent metadata
 				},
 				{
 					ImagePushedAt: &orderedTime[1],

@@ -10,14 +10,11 @@ import (
 
 func (t *CleanupTask) ImageCleanupLoop(done chan struct{}, wg *sync.WaitGroup) {
 	go func() {
+		ecrClient := NewECRClient(t.AwsRegion)
+
 		kubeClient, err := NewKubernetesClient(t.KubeConfig)
 		if err != nil {
 			glog.Fatalf("Cannot create Kubernetes client: %v", err)
-		}
-
-		ecrClient, err := NewECRClient(t.AwsRegion)
-		if err != nil {
-			glog.Fatalf("Cannot create ECR client: %v", err)
 		}
 
 		for {

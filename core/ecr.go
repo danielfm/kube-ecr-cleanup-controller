@@ -43,7 +43,7 @@ func (slice ImagesByPushDate) Swap(i, j int) {
 // NewECRClient returns a new client for interacting with the ECR API. The
 // credentials are retrieved from environment variables or from the
 // `~/.aws/credentials` file.
-func NewECRClient(region string) (*ECRClientImpl, error) {
+func NewECRClient(region string) *ECRClientImpl {
 	creds := credentials.NewChainCredentials(
 		[]credentials.Provider{
 			&credentials.EnvProvider{},
@@ -58,7 +58,7 @@ func NewECRClient(region string) (*ECRClientImpl, error) {
 
 	return &ECRClientImpl{
 		ECRClient: ecr.New(sess),
-	}, nil
+	}
 }
 
 // ListRepositories returns the data belonging to the given repository names.
