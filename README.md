@@ -43,7 +43,6 @@ perform in order for the controller to work:
             "Action": [
                 "ecr:BatchDeleteImage",
                 "ecr:DescribeRepositories",
-                "ecr:ListImages",
                 "ecr:DescribeImages"
             ],
             "Resource": [
