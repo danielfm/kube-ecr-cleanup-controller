@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/aws/aws-sdk-go/service/ecr"
+
 	"k8s.io/client-go/pkg/api/v1"
 )
 
-// mockECRClient is used to verify that the Kubernetes client is being called
+// mockKubeClient is used to verify that the Kubernetes client is being called
 // with the correct arguments, and that the return values are being handled
 // correctly by its consumers.
 type mockKubeClient struct {
@@ -17,6 +19,23 @@ type mockKubeClient struct {
 
 	listAllPodsResult []*v1.Pod
 	listAllPodsError  error
+}
+
+// mockECRClient is used to verify that the Kubernetes client is being called
+// with the correct arguments, and that the return values are being handled
+// correctly by its consumers.
+type mockECRClient struct {
+	t *testing.T
+
+	expectedRepositoryNames []string
+
+	listRepositoriesResult []*ecr.Repository
+	listRepositoriesError  error
+
+	listImagesResult []*ecr.ImageDetail
+	listImagesError  error
+
+	batchRemoveImagesError error
 }
 
 func (m *mockKubeClient) ListAllPods(namespace []*string) ([]*v1.Pod, error) {
@@ -31,6 +50,32 @@ func (m *mockKubeClient) ListAllPods(namespace []*string) ([]*v1.Pod, error) {
 	}
 
 	return m.listAllPodsResult, m.listAllPodsError
+}
+
+func (m *mockECRClient) ListRepositories(repositoryNames []*string) ([]*ecr.Repository, error) {
+	if len(repositoryNames) != len(m.expectedRepositoryNames) {
+		m.t.Errorf("Expected repository names to contain %d elements, but it contains %d", len(m.expectedRepositoryNames), len(repositoryNames))
+	}
+
+	for i := range repositoryNames {
+		if *repositoryNames[i] != m.expectedRepositoryNames[i] {
+			m.t.Errorf("Expected repository name at index %d to be %v, but was %v", i, m.expectedRepositoryNames[i], *repositoryNames[i])
+		}
+	}
+
+	return m.listRepositoriesResult, m.listRepositoriesError
+}
+
+func (m *mockECRClient) ListImages(repositoryName *string) ([]*ecr.ImageDetail, error) {
+	// TODO
+
+	return m.listImagesResult, m.listImagesError
+}
+
+func (m *mockECRClient) BatchRemoveImages(images []*ecr.ImageDetail) error {
+	// TODO
+
+	return m.batchRemoveImagesError
 }
 
 func TestRemoveOldImagesWithKubeListPodsError(t *testing.T) {
@@ -56,7 +101,34 @@ func TestRemoveOldImagesWithKubeListPodsError(t *testing.T) {
 }
 
 func TestRemoveOldImagesWithECRListRepositoriesError(t *testing.T) {
-	// TODO
+	namespace, repoName := "namespace", "repo"
+	kubeClient := &mockKubeClient{
+		t: t,
+
+		expectedNamespace: []string{namespace},
+		listAllPodsResult: []*v1.Pod{
+			{},
+		},
+	}
+
+	ecrClient := &mockECRClient{
+		t: t,
+
+		expectedRepositoryNames: []string{repoName},
+		listRepositoriesResult:  nil,
+		listRepositoriesError:   fmt.Errorf(""),
+	}
+
+	task := &CleanupTask{
+		KubeNamespaces:  []*string{&namespace},
+		EcrRepositories: []*string{&repoName},
+	}
+
+	errs := task.RemoveOldImages(kubeClient, ecrClient)
+
+	if len(errs) != 1 {
+		t.Errorf("Expected errors to contain 1 element, but it contains %d", len(errs))
+	}
 }
 
 func TestRemoveOldImagesWithECRListImagesError(t *testing.T) {

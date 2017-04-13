@@ -47,14 +47,14 @@ func (t *CleanupTask) RemoveOldImages(kubeClient KubernetesClient, ecrClient ECR
 	}
 	glog.Infof("There are currently %d running pods.", len(pods))
 
-	usedImages := ECRImagesFromPods(pods)
-	glog.Infof("There are currently %d ECR images in use.", len(usedImages))
-
 	repos, err := ecrClient.ListRepositories(t.EcrRepositories)
 	if err != nil {
 		errors = append(errors, fmt.Errorf("Cannot list ECR repositories: %v", err))
 		return errors
 	}
+
+	usedImages := ECRImagesFromPods(pods)
+	glog.Infof("There are currently %d ECR images in use.", len(usedImages))
 
 	for _, repo := range repos {
 		repoName := *repo.RepositoryName

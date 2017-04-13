@@ -9,10 +9,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 )
 
-// mockECRClient is used to verify that the ECR client is being called with the
+// mockAWSECRClient is used to verify that the ECR client is being called with the
 // correct arguments, and that the return values are being handled correctly by
 // its consumers.
-type mockECRClient struct {
+type mockAWSECRClient struct {
 	t *testing.T
 	ecriface.ECRAPI
 
@@ -22,7 +22,7 @@ type mockECRClient struct {
 	outputError error
 }
 
-func (m *mockECRClient) DescribeRepositoriesPages(input *ecr.DescribeRepositoriesInput, fn func(*ecr.DescribeRepositoriesOutput, bool) bool) error {
+func (m *mockAWSECRClient) DescribeRepositoriesPages(input *ecr.DescribeRepositoriesInput, fn func(*ecr.DescribeRepositoriesOutput, bool) bool) error {
 	if input == nil {
 		m.t.Errorf("Unexpected nil input")
 	}
@@ -59,7 +59,7 @@ func (m *mockECRClient) DescribeRepositoriesPages(input *ecr.DescribeRepositorie
 	return m.outputError
 }
 
-func (m *mockECRClient) DescribeImagesPages(input *ecr.DescribeImagesInput, fn func(*ecr.DescribeImagesOutput, bool) bool) error {
+func (m *mockAWSECRClient) DescribeImagesPages(input *ecr.DescribeImagesInput, fn func(*ecr.DescribeImagesOutput, bool) bool) error {
 	if input == nil {
 		m.t.Errorf("Unexpected nil input")
 	}
@@ -90,7 +90,7 @@ func (m *mockECRClient) DescribeImagesPages(input *ecr.DescribeImagesInput, fn f
 	return m.outputError
 }
 
-func (m *mockECRClient) BatchDeleteImage(input *ecr.BatchDeleteImageInput) (*ecr.BatchDeleteImageOutput, error) {
+func (m *mockAWSECRClient) BatchDeleteImage(input *ecr.BatchDeleteImageInput) (*ecr.BatchDeleteImageOutput, error) {
 	if input == nil {
 		m.t.Errorf("Unexpected nil input")
 	}
@@ -167,7 +167,7 @@ func TestListRepositoriesError(t *testing.T) {
 	repoNames := []string{"repo-1"}
 
 	client := ECRClientImpl{
-		ECRClient: &mockECRClient{
+		ECRClient: &mockAWSECRClient{
 			t: t,
 
 			expectedRepositoryNames: repoNames,
@@ -191,7 +191,7 @@ func TestListRepositories(t *testing.T) {
 	repoNames := []string{"repo-1"}
 
 	client := ECRClientImpl{
-		ECRClient: &mockECRClient{
+		ECRClient: &mockAWSECRClient{
 			t: t,
 
 			expectedRepositoryNames: repoNames,
@@ -233,7 +233,7 @@ func TestListImagesError(t *testing.T) {
 	repoName := "repo-1"
 
 	client := ECRClientImpl{
-		ECRClient: &mockECRClient{
+		ECRClient: &mockAWSECRClient{
 			t: t,
 
 			expectedRepositoryNames: []string{repoName},
@@ -257,7 +257,7 @@ func TestListImages(t *testing.T) {
 	repoName := "repo-1"
 
 	client := ECRClientImpl{
-		ECRClient: &mockECRClient{
+		ECRClient: &mockAWSECRClient{
 			t: t,
 
 			expectedRepositoryNames: []string{repoName},
@@ -323,7 +323,7 @@ func TestBatchRemoveImagesError(t *testing.T) {
 	}
 
 	client := ECRClientImpl{
-		ECRClient: &mockECRClient{
+		ECRClient: &mockAWSECRClient{
 			t: t,
 
 			expectedRepositoryNames: []string{repoName},
@@ -351,7 +351,7 @@ func TestBatchRemoveImages(t *testing.T) {
 	}
 
 	client := ECRClientImpl{
-		ECRClient: &mockECRClient{
+		ECRClient: &mockAWSECRClient{
 			t: t,
 
 			expectedRepositoryNames: []string{repoName},
