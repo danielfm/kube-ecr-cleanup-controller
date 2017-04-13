@@ -7,6 +7,7 @@ import:
   - aws/credentials
   - aws/session
   - service/ecr
+  - service/ecr/ecriface
 - package: github.com/golang/glog
 - package: k8s.io/client-go
   subpackages:
