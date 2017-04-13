@@ -20,7 +20,7 @@ type ECRClientImpl struct {
 type ECRClient interface {
 	ListRepositories(repositoryNames []*string) ([]*ecr.Repository, error)
 	ListImages(repositoryName *string) ([]*ecr.ImageDetail, error)
-	BatchRemoveImages(repositoryName *string, images []*ecr.ImageDetail) error
+	BatchRemoveImages(images []*ecr.ImageDetail) error
 }
 
 // ImagesByPushDate lets us sort ECR images by push date so that we can
@@ -113,13 +113,20 @@ func (c *ECRClientImpl) ListImages(repositoryName *string) ([]*ecr.ImageDetail, 
 	return images, nil
 }
 
-// BatchRemoveImages deletes all the given images from the repository identified
-// by the given repository name in one go.
-func (c *ECRClientImpl) BatchRemoveImages(repositoryName *string, images []*ecr.ImageDetail) error {
+// BatchRemoveImages deletes all the given images in one go. All images must
+// be stored in the same repository for this to work.
+func (c *ECRClientImpl) BatchRemoveImages(images []*ecr.ImageDetail) error {
 
 	// No images to be removed
 	if len(images) == 0 {
 		return nil
+	}
+
+	repositoryName := images[0].RepositoryName
+	for i := range images {
+		if *images[i].RepositoryName != *repositoryName {
+			return fmt.Errorf("All images must belong to the same ECR repo")
+		}
 	}
 
 	imageIds := make([]*ecr.ImageIdentifier, len(images))

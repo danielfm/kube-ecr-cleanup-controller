@@ -75,7 +75,7 @@ func (t *CleanupTask) RemoveOldImages(kubeClient KubernetesClient, ecrClient ECR
 		}
 
 		glog.Infof("Removing %d old unused images.", len(unusedImages))
-		if err = ecrClient.BatchRemoveImages(&repoName, unusedImages); err != nil {
+		if err = ecrClient.BatchRemoveImages(unusedImages); err != nil {
 			errors = append(errors, fmt.Errorf("Could not batch remove images from repo '%s': %v", repoName, err))
 			continue
 		}
