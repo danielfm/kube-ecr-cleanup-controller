@@ -11,6 +11,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
 )
 
+const (
+	batchRemoveMaxImages = 100
+)
+
 type ECRClientImpl struct {
 	ECRClient ecriface.ECRAPI
 }
@@ -122,6 +126,11 @@ func (c *ECRClientImpl) BatchRemoveImages(images []*ecr.ImageDetail) error {
 		return nil
 	}
 
+	// Too many images to delete
+	if len(images) > batchRemoveMaxImages {
+		return fmt.Errorf("Only allows to remove %d images in a single call", batchRemoveMaxImages)
+	}
+
 	repositoryName := images[0].RepositoryName
 	for i := range images {
 		if *images[i].RepositoryName != *repositoryName {
@@ -161,9 +170,8 @@ func SortImagesByPushDate(images []*ecr.ImageDetail) {
 
 // FilterOldUnusedImages goes through the given list of ECR images and returns
 // another list of images (giving priority to older images) that are not in use.
-// The filtered images, when removed, will bring the number of images stored in
-// the repository down to a value as close to the number specified in `keepMax`
-// as possible.
+// This list will contain at most 100 images, which is the maximum number of
+// images we are allowed to delete in a single API call to AWS.
 func FilterOldUnusedImages(keepMax int, repoImages []*ecr.ImageDetail, tagsInUse []string) []*ecr.ImageDetail {
 	usedImagesFound := 0
 	unusedImages := []*ecr.ImageDetail{}
@@ -198,7 +206,11 @@ repoImagesLoop:
 		lastImageIdx = len(unusedImages)
 	}
 
-	// Returns the oldest images that are not in use that, when deleted,
-	// will bring the number of images down to the specified theshold
+	// Only returns the 100 oldest unused images, which is the number of
+	// images we are allowed to delete in a single API call
+	if lastImageIdx > batchRemoveMaxImages {
+		lastImageIdx = batchRemoveMaxImages
+	}
+
 	return unusedImages[:lastImageIdx]
 }

@@ -291,6 +291,18 @@ func TestBatchRemoveImagesWithEmptyImages(t *testing.T) {
 	}
 }
 
+func TestBatchRemoveImagesWithTooManyImages(t *testing.T) {
+	client := ECRClientImpl{
+		ECRClient: nil, // Should not interact with the ECR client
+	}
+
+	err := client.BatchRemoveImages(make([]*ecr.ImageDetail, 101))
+
+	if err == nil {
+		t.Errorf("Expected error not to be nil, but it was")
+	}
+}
+
 func TestBatchRemoveImagesFromDifferentRepos(t *testing.T) {
 	repoNames := []string{"repo-1", "repo-2"}
 
@@ -374,6 +386,20 @@ func TestFilterOldUnusedImages(t *testing.T) {
 		time.Unix(0, 0),
 		time.Unix(1, 0),
 		time.Unix(2, 0),
+	}
+
+	tooManyImages := make([]*ecr.ImageDetail, 1000)
+	for i := range tooManyImages {
+		tooManyImages[i] = &ecr.ImageDetail{
+			ImagePushedAt: &orderedTime[0],
+		}
+	}
+
+	oldImagesCapped := make([]*ecr.ImageDetail, 100)
+	for i := range oldImagesCapped {
+		oldImagesCapped[i] = &ecr.ImageDetail{
+			ImagePushedAt: &orderedTime[0],
+		}
 	}
 
 	testCases := []struct {
@@ -549,6 +575,14 @@ func TestFilterOldUnusedImages(t *testing.T) {
 					ImagePushedAt: &orderedTime[2],
 				},
 			},
+		},
+
+		// Should limit the output to 100 images
+		{
+			keepMax:   0,
+			tagsInUse: []string{},
+			images:    tooManyImages,
+			oldImages: oldImagesCapped,
 		},
 	}
 
