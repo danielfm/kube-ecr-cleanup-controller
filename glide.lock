@@ -1,5 +1,5 @@
-hash: 9659345ac01ca2b9eb6a52ef026355c9c71ce959dd31c3019361b6ce12ea983f
-updated: 2017-04-07T16:07:49.702069207-03:00
+hash: 995e51035e548836c9a8a2d4c9b797105b66375e05d777b29a3806a09084eeb4
+updated: 2017-07-20T18:14:51.210915115-03:00
 imports:
 - name: cloud.google.com/go
   version: 3b1ae45394a234c385be014e9a488f2bb6eef821
@@ -7,7 +7,7 @@ imports:
   - compute/metadata
   - internal
 - name: github.com/aws/aws-sdk-go
-  version: d643bdf04f2cc6f95424f9f4e69037a563fc0736
+  version: 8da51c33f6001c4dda06a2561c2234be4cece1ed
   subpackages:
   - aws
   - aws/awserr
@@ -25,6 +25,7 @@ imports:
   - aws/request
   - aws/session
   - aws/signer/v4
+  - internal/shareddefaults
   - private/protocol
   - private/protocol/json/jsonutil
   - private/protocol/jsonrpc
@@ -33,6 +34,7 @@ imports:
   - private/protocol/rest
   - private/protocol/xml/xmlutil
   - service/ecr
+  - service/ecr/ecriface
   - service/sts
 - name: github.com/blang/semver
   version: 31b736133b98f26d5e078ec9eb591666edfd091f
@@ -67,7 +69,7 @@ imports:
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-ini/ini
-  version: e7fea39b01aea8d5671f6858f0532f56e8bff3a5
+  version: 3d73f4b845efdf9989fffd4b4e562727744a34ba
 - name: github.com/go-openapi/jsonpointer
   version: 46af16f9f7b149af66e5d1bd010e3574dc06de98
 - name: github.com/go-openapi/jsonreference
@@ -82,7 +84,7 @@ imports:
   - proto
   - sortkeys
 - name: github.com/golang/glog
-  version: 23def4e6c14b4da8ac2ed8007337bc5eb5007998
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/protobuf
   version: 8616e8ee5e20a1704615e6c8d7afcdac06087a67
   subpackages:
