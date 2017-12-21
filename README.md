@@ -94,7 +94,7 @@ Usage of ./kube-ecr-cleanup-controller:
 
 If this project is useful for you, buy me a beer!
 
-Bitcoin: `1CLFiuB5oghPjnq8zXFkYgKyFnCTVWEV1r`
+Bitcoin: `bc1qtwyfcj7pssk0krn5wyfaca47caar6nk9yyc4mu`
 
 ## License
 
