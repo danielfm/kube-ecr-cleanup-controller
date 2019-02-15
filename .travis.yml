@@ -1,9 +1,7 @@
 language: go
 
 go:
-  - 1.9
-  - 1.10
-  - 1.11
+  - "1.11"
 
 # Setting sudo access to false will let Travis CI use containers rather than
 # VMs to run the tests. For more details see:
