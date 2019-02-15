@@ -1,4 +1,4 @@
-package core
+package processor
 
 import (
 	"fmt"
@@ -6,13 +6,17 @@ import (
 	"time"
 
 	"github.com/golang/glog"
+
+	"github.com/danielfm/kube-ecr-cleanup-controller/pkg/aws"
+	"github.com/danielfm/kube-ecr-cleanup-controller/pkg/core"
+	"github.com/danielfm/kube-ecr-cleanup-controller/pkg/kubernetes"
 )
 
-func (t *CleanupTask) ImageCleanupLoop(done chan struct{}, wg *sync.WaitGroup) {
+func ImageCleanupLoop(t *core.CleanupTask, done chan struct{}, wg *sync.WaitGroup) {
 	go func() {
-		ecrClient := NewECRClient(t.AwsRegion)
+		ecrClient := aws.NewECRClient(t.AwsRegion)
 
-		kubeClient, err := NewKubernetesClient(t.KubeConfig)
+		kubeClient, err := kubernetes.NewKubernetesClient(t.KubeConfig)
 		if err != nil {
 			glog.Fatalf("Cannot create Kubernetes client: %v", err)
 		}
@@ -20,7 +24,7 @@ func (t *CleanupTask) ImageCleanupLoop(done chan struct{}, wg *sync.WaitGroup) {
 		for {
 			select {
 			case <-time.After(time.Duration(t.Interval) * time.Minute):
-				errors := t.RemoveOldImages(kubeClient, ecrClient)
+				errors := RemoveOldImages(t, kubeClient, ecrClient)
 				if len(errors) > 0 {
 					for _, err := range errors {
 						glog.Error(err)
@@ -35,7 +39,7 @@ func (t *CleanupTask) ImageCleanupLoop(done chan struct{}, wg *sync.WaitGroup) {
 	}()
 }
 
-func (t *CleanupTask) RemoveOldImages(kubeClient KubernetesClient, ecrClient ECRClient) []error {
+func RemoveOldImages(t *core.CleanupTask, kubeClient kubernetes.KubernetesClient, ecrClient aws.ECRClient) []error {
 	errors := []error{}
 
 	glog.Info("Cleanup loop started.")
@@ -53,7 +57,7 @@ func (t *CleanupTask) RemoveOldImages(kubeClient KubernetesClient, ecrClient ECR
 		return errors
 	}
 
-	usedImages := ECRImagesFromPods(pods)
+	usedImages := kubernetes.ECRImagesFromPods(pods)
 	glog.Infof("There are currently %d ECR images in use.", len(usedImages))
 
 	for _, repo := range repos {
@@ -67,7 +71,7 @@ func (t *CleanupTask) RemoveOldImages(kubeClient KubernetesClient, ecrClient ECR
 		}
 		glog.Infof("Number of images in ECR repo: %d", len(images))
 
-		unusedOldImages := FilterOldUnusedImages(t.MaxImages, images, usedImages[repoName])
+		unusedOldImages := aws.FilterOldUnusedImages(t.MaxImages, images, usedImages[repoName])
 
 		if len(unusedOldImages) == 0 {
 			glog.Info("There's no old unused images to remove. Continuing.")

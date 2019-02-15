@@ -1,4 +1,4 @@
-package core
+package processor
 
 import (
 	"fmt"
@@ -6,7 +6,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/ecr"
 
-	"k8s.io/client-go/pkg/api/v1"
+	apiv1 "k8s.io/api/core/v1"
+
+	"github.com/danielfm/kube-ecr-cleanup-controller/pkg/core"
 )
 
 // mockKubeClient is used to verify that the Kubernetes client is being called
@@ -17,7 +19,7 @@ type mockKubeClient struct {
 
 	expectedNamespace []string
 
-	listAllPodsResult []*v1.Pod
+	listAllPodsResult []*apiv1.Pod
 	listAllPodsError  error
 }
 
@@ -40,7 +42,7 @@ type mockECRClient struct {
 	batchRemoveImagesError error
 }
 
-func (m *mockKubeClient) ListAllPods(namespace []*string) ([]*v1.Pod, error) {
+func (m *mockKubeClient) ListAllPods(namespace []*string) ([]*apiv1.Pod, error) {
 	if len(namespace) != len(m.expectedNamespace) {
 		m.t.Errorf("Expected namespaces to contain %d elements, but it contains %d", len(m.expectedNamespace), len(namespace))
 	}
@@ -101,11 +103,11 @@ func TestRemoveOldImagesWithKubeListPodsError(t *testing.T) {
 		listAllPodsError:  fmt.Errorf(""),
 	}
 
-	task := &CleanupTask{
+	task := &core.CleanupTask{
 		KubeNamespaces: []*string{&namespace},
 	}
 
-	errs := task.RemoveOldImages(kubeClient, nil)
+	errs := RemoveOldImages(task, kubeClient, nil)
 
 	if len(errs) != 1 {
 		t.Errorf("Expected errors to contain 1 element, but it contains %d", len(errs))
@@ -118,7 +120,7 @@ func TestRemoveOldImagesWithECRListRepositoriesError(t *testing.T) {
 		t: t,
 
 		expectedNamespace: []string{namespace},
-		listAllPodsResult: []*v1.Pod{
+		listAllPodsResult: []*apiv1.Pod{
 			{},
 		},
 	}
@@ -131,12 +133,12 @@ func TestRemoveOldImagesWithECRListRepositoriesError(t *testing.T) {
 		listRepositoriesError:   fmt.Errorf(""),
 	}
 
-	task := &CleanupTask{
+	task := &core.CleanupTask{
 		KubeNamespaces:  []*string{&namespace},
 		EcrRepositories: []*string{&repoName},
 	}
 
-	errs := task.RemoveOldImages(kubeClient, ecrClient)
+	errs := RemoveOldImages(task, kubeClient, ecrClient)
 
 	if len(errs) != 1 {
 		t.Errorf("Expected errors to contain 1 element, but it contains %d", len(errs))
@@ -149,10 +151,10 @@ func TestRemoveOldImagesWithECRListImagesError(t *testing.T) {
 		t: t,
 
 		expectedNamespace: []string{namespace},
-		listAllPodsResult: []*v1.Pod{
+		listAllPodsResult: []*apiv1.Pod{
 			{
-				Spec: v1.PodSpec{
-					Containers: []v1.Container{
+				Spec: apiv1.PodSpec{
+					Containers: []apiv1.Container{
 						{
 							Image: "id.dkr.ecr.region.amazonaws.com/repo:tag-1",
 						},
@@ -177,13 +179,13 @@ func TestRemoveOldImagesWithECRListImagesError(t *testing.T) {
 		listImagesError:              fmt.Errorf(""),
 	}
 
-	task := &CleanupTask{
+	task := &core.CleanupTask{
 		KubeNamespaces:  []*string{&namespace},
 		EcrRepositories: []*string{&repoName},
 		MaxImages:       1,
 	}
 
-	errs := task.RemoveOldImages(kubeClient, ecrClient)
+	errs := RemoveOldImages(task, kubeClient, ecrClient)
 
 	if len(errs) != 1 {
 		t.Errorf("Expected errors to contain 1 element, but it contains %d", len(errs))
@@ -196,10 +198,10 @@ func TestRemoveOldImagesWithoutOldImagesToRemove(t *testing.T) {
 		t: t,
 
 		expectedNamespace: []string{namespace},
-		listAllPodsResult: []*v1.Pod{
+		listAllPodsResult: []*apiv1.Pod{
 			{
-				Spec: v1.PodSpec{
-					Containers: []v1.Container{
+				Spec: apiv1.PodSpec{
+					Containers: []apiv1.Container{
 						{
 							Image: "id.dkr.ecr.region.amazonaws.com/repo:tag-1",
 						},
@@ -227,7 +229,7 @@ func TestRemoveOldImagesWithoutOldImagesToRemove(t *testing.T) {
 		},
 	}
 
-	task := &CleanupTask{
+	task := &core.CleanupTask{
 		KubeNamespaces:  []*string{&namespace},
 		EcrRepositories: []*string{&repoName},
 
@@ -235,7 +237,7 @@ func TestRemoveOldImagesWithoutOldImagesToRemove(t *testing.T) {
 		MaxImages: 1000,
 	}
 
-	errs := task.RemoveOldImages(kubeClient, ecrClient)
+	errs := RemoveOldImages(task, kubeClient, ecrClient)
 
 	if len(errs) != 0 {
 		t.Errorf("Expected errors to be empty, but is %q", errs)
@@ -248,10 +250,10 @@ func TestRemoveOldImagesWithECRBatchRemoveImagesError(t *testing.T) {
 		t: t,
 
 		expectedNamespace: []string{namespace},
-		listAllPodsResult: []*v1.Pod{
+		listAllPodsResult: []*apiv1.Pod{
 			{
-				Spec: v1.PodSpec{
-					Containers: []v1.Container{
+				Spec: apiv1.PodSpec{
+					Containers: []apiv1.Container{
 						{
 							Image: "id.dkr.ecr.region.amazonaws.com/repo:tag-1",
 						},
@@ -286,7 +288,7 @@ func TestRemoveOldImagesWithECRBatchRemoveImagesError(t *testing.T) {
 		batchRemoveImagesError: fmt.Errorf(""),
 	}
 
-	task := &CleanupTask{
+	task := &core.CleanupTask{
 		KubeNamespaces:  []*string{&namespace},
 		EcrRepositories: []*string{&repoName},
 
@@ -294,7 +296,7 @@ func TestRemoveOldImagesWithECRBatchRemoveImagesError(t *testing.T) {
 		MaxImages: 0,
 	}
 
-	errs := task.RemoveOldImages(kubeClient, ecrClient)
+	errs := RemoveOldImages(task, kubeClient, ecrClient)
 
 	if len(errs) == 0 {
 		t.Errorf("Expected errors to contain 1 element, but it contains %d", len(errs))
@@ -307,10 +309,10 @@ func TestRemoveOldImages(t *testing.T) {
 		t: t,
 
 		expectedNamespace: []string{namespace},
-		listAllPodsResult: []*v1.Pod{
+		listAllPodsResult: []*apiv1.Pod{
 			{
-				Spec: v1.PodSpec{
-					Containers: []v1.Container{
+				Spec: apiv1.PodSpec{
+					Containers: []apiv1.Container{
 						{
 							Image: "id.dkr.ecr.region.amazonaws.com/repo:tag-1",
 						},
@@ -344,7 +346,7 @@ func TestRemoveOldImages(t *testing.T) {
 		},
 	}
 
-	task := &CleanupTask{
+	task := &core.CleanupTask{
 		KubeNamespaces:  []*string{&namespace},
 		EcrRepositories: []*string{&repoName},
 
@@ -352,7 +354,7 @@ func TestRemoveOldImages(t *testing.T) {
 		MaxImages: 0,
 	}
 
-	errs := task.RemoveOldImages(kubeClient, ecrClient)
+	errs := RemoveOldImages(task, kubeClient, ecrClient)
 
 	if len(errs) != 0 {
 		t.Errorf("Expected errors to be empty, but is %q", errs)
