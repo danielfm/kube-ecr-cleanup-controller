@@ -1,28 +1,28 @@
-package core
+package kubernetes
 
 import (
 	"reflect"
 	"testing"
 
-	"k8s.io/client-go/pkg/api/v1"
+	apiv1 "k8s.io/api/core/v1"
 )
 
 func TestECRImagesFromPods(t *testing.T) {
 	testCases := []struct {
-		pods     []*v1.Pod
+		pods     []*apiv1.Pod
 		expected map[string][]string
 	}{
 		// Different tagged images from different repos in the same pod
 		{
-			pods: []*v1.Pod{
+			pods: []*apiv1.Pod{
 				{
-					Spec: v1.PodSpec{
-						InitContainers: []v1.Container{
+					Spec: apiv1.PodSpec{
+						InitContainers: []apiv1.Container{
 							{
 								Image: "id.dkr.ecr.region.amazonaws.com/repo-1:tag-1",
 							},
 						},
-						Containers: []v1.Container{
+						Containers: []apiv1.Container{
 							{
 								Image: "id.dkr.ecr.region.amazonaws.com/repo-2:tag-2",
 							},
@@ -38,15 +38,15 @@ func TestECRImagesFromPods(t *testing.T) {
 
 		// Same tagged image in the same pod
 		{
-			pods: []*v1.Pod{
+			pods: []*apiv1.Pod{
 				{
-					Spec: v1.PodSpec{
-						InitContainers: []v1.Container{
+					Spec: apiv1.PodSpec{
+						InitContainers: []apiv1.Container{
 							{
 								Image: "id.dkr.ecr.region.amazonaws.com/repo-1:tag-1",
 							},
 						},
-						Containers: []v1.Container{
+						Containers: []apiv1.Container{
 							{
 								Image: "id.dkr.ecr.region.amazonaws.com/repo-1:tag-1",
 							},
@@ -61,10 +61,10 @@ func TestECRImagesFromPods(t *testing.T) {
 
 		// Two tagged images from the same repo
 		{
-			pods: []*v1.Pod{
+			pods: []*apiv1.Pod{
 				{
-					Spec: v1.PodSpec{
-						Containers: []v1.Container{
+					Spec: apiv1.PodSpec{
+						Containers: []apiv1.Container{
 							{
 								Image: "id.dkr.ecr.region.amazonaws.com/repo-1:tag-1",
 							},
@@ -72,8 +72,8 @@ func TestECRImagesFromPods(t *testing.T) {
 					},
 				},
 				{
-					Spec: v1.PodSpec{
-						Containers: []v1.Container{
+					Spec: apiv1.PodSpec{
+						Containers: []apiv1.Container{
 							{
 								Image: "id.dkr.ecr.region.amazonaws.com/repo-1:tag-2",
 							},
@@ -88,10 +88,10 @@ func TestECRImagesFromPods(t *testing.T) {
 
 		// Ignore non-ECR image
 		{
-			pods: []*v1.Pod{
+			pods: []*apiv1.Pod{
 				{
-					Spec: v1.PodSpec{
-						Containers: []v1.Container{
+					Spec: apiv1.PodSpec{
+						Containers: []apiv1.Container{
 							{
 								Image: "other-registry.com/repo-1:tag-1",
 							},
@@ -99,8 +99,8 @@ func TestECRImagesFromPods(t *testing.T) {
 					},
 				},
 				{
-					Spec: v1.PodSpec{
-						Containers: []v1.Container{
+					Spec: apiv1.PodSpec{
+						Containers: []apiv1.Container{
 							{
 								Image: "id.dkr.ecr.region.amazonaws.com/repo-1:tag-2",
 							},
@@ -115,10 +115,10 @@ func TestECRImagesFromPods(t *testing.T) {
 
 		// Ignore untagged ECR images
 		{
-			pods: []*v1.Pod{
+			pods: []*apiv1.Pod{
 				{
-					Spec: v1.PodSpec{
-						InitContainers: []v1.Container{
+					Spec: apiv1.PodSpec{
+						InitContainers: []apiv1.Container{
 							{
 								Image: "id.dkr.ecr.region.amazonaws.com/repo-1",
 							},
@@ -136,10 +136,10 @@ func TestECRImagesFromPods(t *testing.T) {
 
 		// Ignore 'latest' tag
 		{
-			pods: []*v1.Pod{
+			pods: []*apiv1.Pod{
 				{
-					Spec: v1.PodSpec{
-						Containers: []v1.Container{
+					Spec: apiv1.PodSpec{
+						Containers: []apiv1.Container{
 							{
 								Image: "id.dkr.ecr.region.amazonaws.com/repo-1:latest",
 							},

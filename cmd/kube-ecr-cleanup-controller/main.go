@@ -11,7 +11,9 @@ import (
 
 	"github.com/golang/glog"
 
-	"github.com/danielfm/kube-ecr-cleanup-controller/core"
+	"github.com/danielfm/kube-ecr-cleanup-controller/pkg/core"
+	"github.com/danielfm/kube-ecr-cleanup-controller/pkg/processor"
+	"github.com/danielfm/kube-ecr-cleanup-controller/pkg/utils"
 )
 
 var task *core.CleanupTask
@@ -40,8 +42,8 @@ func init() {
 		log.Fatalf("Must specify at least one ECR repository to watch, exiting.")
 	}
 
-	namespaces := core.ParseCommaSeparatedList(namespacesStr)
-	repositories := core.ParseCommaSeparatedList(reposStr)
+	namespaces := utils.ParseCommaSeparatedList(namespacesStr)
+	repositories := utils.ParseCommaSeparatedList(reposStr)
 
 	if len(namespaces) == 0 {
 		glog.Fatalf("Must specify at least one namespace, exiting.")
@@ -69,7 +71,7 @@ func main() {
 	}
 
 	wg.Add(1)
-	task.ImageCleanupLoop(doneChan, &wg)
+	processor.ImageCleanupLoop(task, doneChan, &wg)
 
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)

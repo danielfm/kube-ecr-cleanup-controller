@@ -1,4 +1,4 @@
-package core
+package aws
 
 import (
 	"fmt"
@@ -6,6 +6,8 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
 	"github.com/aws/aws-sdk-go/service/ecr/ecriface"
@@ -49,17 +51,21 @@ func (slice ImagesByPushDate) Swap(i, j int) {
 // credentials are retrieved from environment variables or from the
 // `~/.aws/credentials` file.
 func NewECRClient(region string) *ECRClientImpl {
+	awsConfig := aws.NewConfig()
+	awsConfig.WithRegion(region)
+
+	sess := session.New(awsConfig)
+
 	creds := credentials.NewChainCredentials(
 		[]credentials.Provider{
 			&credentials.EnvProvider{},
 			&credentials.SharedCredentialsProvider{},
+			&ec2rolecreds.EC2RoleProvider{
+				Client: ec2metadata.New(sess),
+			},
 		})
 
-	awsConfig := aws.NewConfig()
 	awsConfig.WithCredentials(creds)
-	awsConfig.WithRegion(region)
-
-	sess := session.New(awsConfig)
 
 	return &ECRClientImpl{
 		ECRClient: ecr.New(sess),

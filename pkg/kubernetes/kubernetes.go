@@ -1,18 +1,20 @@
-package core
+package kubernetes
 
 import (
 	"regexp"
 
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/pkg/api/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	apiv1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // KubernetesClient defines the expected interface of any object capable of
 // listing pods from a Kubernetes cluster.
 type KubernetesClient interface {
-	ListAllPods(namespace []*string) ([]*v1.Pod, error)
+	ListAllPods(namespace []*string) ([]*apiv1.Pod, error)
 }
 
 type KubernetesClientImpl struct {
@@ -48,9 +50,9 @@ func NewKubernetesClient(kubeconfig string) (*KubernetesClientImpl, error) {
 }
 
 // ListAllPods returns all pods from the given namespaces.
-func (c *KubernetesClientImpl) ListAllPods(namespace []*string) ([]*v1.Pod, error) {
-	opts := v1.ListOptions{}
-	pods := []*v1.Pod{}
+func (c *KubernetesClientImpl) ListAllPods(namespace []*string) ([]*apiv1.Pod, error) {
+	opts := metav1.ListOptions{}
+	pods := []*apiv1.Pod{}
 
 	for _, ns := range namespace {
 		podList, err := c.clientset.Core().Pods(*ns).List(opts)
@@ -69,7 +71,7 @@ func (c *KubernetesClientImpl) ListAllPods(namespace []*string) ([]*v1.Pod, erro
 // ECRImagesFromPods converts the given list of pods to a map where the keys
 // are the ECR repository names and their values are a slice of strings
 // containing the unique image tags referenced by those pods.
-func ECRImagesFromPods(pods []*v1.Pod) map[string][]string {
+func ECRImagesFromPods(pods []*apiv1.Pod) map[string][]string {
 	imagesPerRepo := map[string][]string{}
 	encountered := map[string]bool{}
 
