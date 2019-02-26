@@ -56,7 +56,7 @@ func (m *mockKubeClient) ListAllPods(namespace []*string) ([]*apiv1.Pod, error) 
 	return m.listAllPodsResult, m.listAllPodsError
 }
 
-func (m *mockECRClient) ListRepositories(repositoryNames []*string) ([]*ecr.Repository, error) {
+func (m *mockECRClient) ListRepositories(repositoryNames []*string, registryID *string) ([]*ecr.Repository, error) {
 	if len(repositoryNames) != len(m.expectedRepositoryNames) {
 		m.t.Errorf("Expected repository names to contain %d elements, but it contains %d", len(m.expectedRepositoryNames), len(repositoryNames))
 	}
@@ -70,7 +70,7 @@ func (m *mockECRClient) ListRepositories(repositoryNames []*string) ([]*ecr.Repo
 	return m.listRepositoriesResult, m.listRepositoriesError
 }
 
-func (m *mockECRClient) ListImages(repositoryName *string) ([]*ecr.ImageDetail, error) {
+func (m *mockECRClient) ListImages(repositoryName *string, registryID *string) ([]*ecr.ImageDetail, error) {
 	if m.expectedImagesRepositoryName != *repositoryName {
 		m.t.Errorf("Expected repository name to be %v, but was %v", m.expectedImagesRepositoryName, *repositoryName)
 	}

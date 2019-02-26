@@ -24,6 +24,8 @@ type CleanupTask struct {
 	KubeNamespaces []*string
 
 	DryRun bool
+
+	RegistryID *string
 }
 
 // NewCleanupTask creates a CleanupTask with default values.

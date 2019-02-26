@@ -18,6 +18,7 @@ type mockAWSECRClient struct {
 
 	expectedRepositoryNames []string
 	expectedImageDigests    []string
+	expectedRegistryID      *string
 
 	outputError error
 }
@@ -29,6 +30,10 @@ func (m *mockAWSECRClient) DescribeRepositoriesPages(input *ecr.DescribeReposito
 
 	if len(input.RepositoryNames) != len(m.expectedRepositoryNames) {
 		m.t.Errorf("Expected number of repository names was %d, but the actual value was %d", len(m.expectedRepositoryNames), len(input.RepositoryNames))
+	}
+
+	if input.RegistryId != m.expectedRegistryID {
+		m.t.Errorf("Expected registry id of %v, but got %v", m.expectedRegistryID, input.RegistryId)
 	}
 
 	for i := range input.RepositoryNames {
@@ -66,6 +71,10 @@ func (m *mockAWSECRClient) DescribeImagesPages(input *ecr.DescribeImagesInput, f
 
 	if *input.RepositoryName != m.expectedRepositoryNames[0] {
 		m.t.Errorf("Expected repository name to be %s, but was %s", m.expectedRepositoryNames[0], *input.RepositoryName)
+	}
+
+	if input.RegistryId != m.expectedRegistryID {
+		m.t.Errorf("Expected registry id of %v, but got %v", m.expectedRegistryID, input.RegistryId)
 	}
 
 	imageDigest := "image-digest"
@@ -152,7 +161,7 @@ func TestListRepositoriesWithEmptyRepos(t *testing.T) {
 		ECRClient: nil, // Should not interact with the ECR client
 	}
 
-	repos, err := client.ListRepositories([]*string{})
+	repos, err := client.ListRepositories([]*string{}, nil)
 
 	if len(repos) != 0 {
 		t.Errorf("Expected repos to be empty, but was not: %q", repos)
@@ -171,12 +180,11 @@ func TestListRepositoriesError(t *testing.T) {
 			t: t,
 
 			expectedRepositoryNames: repoNames,
-
-			outputError: fmt.Errorf(""),
+			outputError:             fmt.Errorf(""),
 		},
 	}
 
-	repos, err := client.ListRepositories([]*string{&repoNames[0]})
+	repos, err := client.ListRepositories([]*string{&repoNames[0]}, nil)
 
 	if repos != nil {
 		t.Errorf("Expected repos to be nil, but was %v", repos)
@@ -198,7 +206,35 @@ func TestListRepositories(t *testing.T) {
 		},
 	}
 
-	repos, err := client.ListRepositories([]*string{&repoNames[0]})
+	repos, err := client.ListRepositories([]*string{&repoNames[0]}, nil)
+
+	if err != nil {
+		t.Errorf("Expected error to be nil, but it was: %v", err)
+	}
+
+	if repos == nil {
+		t.Errorf("Expected repos not to be nil, but it was")
+	}
+
+	if len(repos) != 2 {
+		t.Errorf("Expected repos to contain 2 items, but it contains: %q", repos)
+	}
+}
+
+func TestListRepositoriesWithRegistryId(t *testing.T) {
+	repoNames := []string{"repo-1"}
+	registryID := "123456789012"
+
+	client := ECRClientImpl{
+		ECRClient: &mockAWSECRClient{
+			t: t,
+
+			expectedRepositoryNames: repoNames,
+			expectedRegistryID:      &registryID,
+		},
+	}
+
+	repos, err := client.ListRepositories([]*string{&repoNames[0]}, &registryID)
 
 	if err != nil {
 		t.Errorf("Expected error to be nil, but it was: %v", err)
@@ -218,7 +254,7 @@ func TestListImagesWithNilRepositoryName(t *testing.T) {
 		ECRClient: nil, // Should not interact with the ECR client
 	}
 
-	images, err := client.ListImages(nil)
+	images, err := client.ListImages(nil, nil)
 
 	if len(images) != 0 {
 		t.Errorf("Expected images to be empty, but was not: %q", images)
@@ -242,7 +278,7 @@ func TestListImagesError(t *testing.T) {
 		},
 	}
 
-	images, err := client.ListImages(&repoName)
+	images, err := client.ListImages(&repoName, nil)
 
 	if images != nil {
 		t.Errorf("Expected images to be nil, but was %v", images)
@@ -264,7 +300,35 @@ func TestListImages(t *testing.T) {
 		},
 	}
 
-	images, err := client.ListImages(&repoName)
+	images, err := client.ListImages(&repoName, nil)
+
+	if err != nil {
+		t.Errorf("Expected error to be nil, but it was: %v", err)
+	}
+
+	if images == nil {
+		t.Errorf("Expected images not to be nil, but it was")
+	}
+
+	if len(images) != 2 {
+		t.Errorf("Expected images to contain 2 items, but it contains: %q", images)
+	}
+}
+
+func TestListImagesWithRegistryId(t *testing.T) {
+	repoName := "repo-1"
+	registryID := "123456789012"
+
+	client := ECRClientImpl{
+		ECRClient: &mockAWSECRClient{
+			t: t,
+
+			expectedRepositoryNames: []string{repoName},
+			expectedRegistryID:      &registryID,
+		},
+	}
+
+	images, err := client.ListImages(&repoName, &registryID)
 
 	if err != nil {
 		t.Errorf("Expected error to be nil, but it was: %v", err)

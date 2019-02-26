@@ -17,6 +17,7 @@ const (
 	batchRemoveMaxImages = 100
 )
 
+// ECRClientImpl provides an interface for mocking.
 type ECRClientImpl struct {
 	ECRClient ecriface.ECRAPI
 }
@@ -24,8 +25,8 @@ type ECRClientImpl struct {
 // ECRClient defines the expected interface of any object capable of
 // listing and removing images from a ECR repository.
 type ECRClient interface {
-	ListRepositories(repositoryNames []*string) ([]*ecr.Repository, error)
-	ListImages(repositoryName *string) ([]*ecr.ImageDetail, error)
+	ListRepositories(repositoryNames []*string, registryID *string) ([]*ecr.Repository, error)
+	ListImages(repositoryName *string, registryID *string) ([]*ecr.ImageDetail, error)
 	BatchRemoveImages(images []*ecr.ImageDetail) error
 }
 
@@ -73,15 +74,25 @@ func NewECRClient(region string) *ECRClientImpl {
 }
 
 // ListRepositories returns the data belonging to the given repository names.
-func (c *ECRClientImpl) ListRepositories(repositoryNames []*string) ([]*ecr.Repository, error) {
+func (c *ECRClientImpl) ListRepositories(repositoryNames []*string, registryID *string) ([]*ecr.Repository, error) {
 	repos := []*ecr.Repository{}
 
 	if len(repositoryNames) == 0 {
 		return repos, nil
 	}
 
-	input := &ecr.DescribeRepositoriesInput{
-		RepositoryNames: repositoryNames,
+	// If the user has specified a registryID (account ID), then use it here.  If not
+	// then don't set it so that the default will be assumed.
+	input := &ecr.DescribeRepositoriesInput{}
+	if registryID == nil {
+		input = &ecr.DescribeRepositoriesInput{
+			RepositoryNames: repositoryNames,
+		}
+	} else {
+		input = &ecr.DescribeRepositoriesInput{
+			RepositoryNames: repositoryNames,
+			RegistryId:      registryID,
+		}
 	}
 
 	callback := func(page *ecr.DescribeRepositoriesOutput, lastPage bool) bool {
@@ -99,15 +110,25 @@ func (c *ECRClientImpl) ListRepositories(repositoryNames []*string) ([]*ecr.Repo
 
 // ListImages returns data from all images stored in the repository identified
 // by the given repository name.
-func (c *ECRClientImpl) ListImages(repositoryName *string) ([]*ecr.ImageDetail, error) {
+func (c *ECRClientImpl) ListImages(repositoryName *string, registryID *string) ([]*ecr.ImageDetail, error) {
 	images := []*ecr.ImageDetail{}
 
 	if repositoryName == nil {
 		return images, nil
 	}
 
-	input := &ecr.DescribeImagesInput{
-		RepositoryName: repositoryName,
+	// If the user has specified a registryID (account ID), then use it here.  If not
+	// then don't set it so that the default will be assumed.
+	input := &ecr.DescribeImagesInput{}
+	if registryID == nil {
+		input = &ecr.DescribeImagesInput{
+			RepositoryName: repositoryName,
+		}
+	} else {
+		input = &ecr.DescribeImagesInput{
+			RepositoryName: repositoryName,
+			RegistryId:     registryID,
+		}
 	}
 
 	callback := func(page *ecr.DescribeImagesOutput, lastPage bool) bool {
