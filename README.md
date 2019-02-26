@@ -61,50 +61,49 @@ clean up with this controller.
 
 ```
 $ ./kube-ecr-cleanup-controller -h
-Usage of ./kube-ecr-cleanup-controller:
+Usage of bin/kube-ecr-cleanup-controller:
   -alsologtostderr
-    	log to standard error as well as files
+        log to standard error as well as files
   -dry-run
-    	Just log, don't delete any images. (default true)
+        just log, don't delete any images.
   -interval int
-    	Check interval in minutes. (default 30)
+        check interval, in minutes. (default 30)
   -kubeconfig string
-    	Path to a kubeconfig file.
+        path to a kubeconfig file.
   -log_backtrace_at value
-    	when logging hits line file:N, emit a stack trace
+        when logging hits line file:N, emit a stack trace
   -log_dir string
-    	If non-empty, write log files in this directory
+        If non-empty, write log files in this directory
   -logtostderr
-    	log to standard error instead of files
+        log to standard error instead of files
   -max-images int
-    	Maximum number of images to keep in each repository. (default 900)
+        maximum number of images to keep in each repository. (default 900)
   -namespaces string
-    	Do not remove images used by pods in this comma-separated list of namespaces. (default "default")
+        do not remove images used by pods in this comma-separated list of namespaces. (default "default")
   -region string
-    	AWS Region to use when talking to AWS. (default "us-east-1")
+        AWS Region to use when talking to AWS. (default "us-east-1")
   -repos string
-    	Comma-separated list of repository names to watch.
+        comma-separated list of repository names to watch.
   -stderrthreshold value
-    	logs at or above this threshold go to stderr
+        logs at or above this threshold go to stderr
   -v value
-    	log level for V logs
+        log level for V logs
   -vmodule value
-    	comma-separated list of pattern=N settings for file-filtered logging
+        comma-separated list of pattern=N settings for file-filtered logging
 ```
 
 ## Build Locally
 
 Assuming you have your Go environment already configured:
 
-    1. Clone this repository in `$GOPATH/src/github.com/danielfm/kube-ecr-cleanup-controller`
-
-    2. Run `glide i --strip-vendor` and then `make` to build the binary (or `make image` to build the docker image)
-
-    3. Then, just re-tag the image to `<your-name>/kube-ecr-cleanup-controller:<tag>` and push to your own registry, if you feel like it
-
+1. Clone this repository in `$GOPATH/src/github.com/danielfm/kube-ecr-cleanup-controller`
+2. Run `glide i --strip-vendor` and then `make` to build the Linux binary (or `make image` to build the Docker image)
+3. Then, just re-tag the image to `<your-name>/kube-ecr-cleanup-controller:<tag>` and push to your own registry, if you feel like it
 
 Or, you can use a pre-built image hosted in Docker Hub:
-https://hub.docker.com/r/danielfm/kube-ecr-cleanup-controller/o
+https://hub.docker.com/r/danielfm/kube-ecr-cleanup-controller/
+
+Also, you can run `make test` to run the unit tests (or `make cover`, to run the tests with coverage reporting).
 
 ## Donate
 
