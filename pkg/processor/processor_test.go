@@ -360,3 +360,62 @@ func TestRemoveOldImages(t *testing.T) {
 		t.Errorf("Expected errors to be empty, but is %q", errs)
 	}
 }
+
+func TestRemoveOldImagesWithDryRun(t *testing.T) {
+	namespace, repoName, imageDigest := "namespace", "repo", "image-digest"
+	kubeClient := &mockKubeClient{
+		t: t,
+
+		expectedNamespace: []string{namespace},
+		listAllPodsResult: []*apiv1.Pod{
+			{
+				Spec: apiv1.PodSpec{
+					Containers: []apiv1.Container{
+						{
+							Image: "id.dkr.ecr.region.amazonaws.com/repo:tag-1",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	ecrClient := &mockECRClient{
+		t: t,
+
+		expectedRepositoryNames: []string{repoName},
+		listRepositoriesResult: []*ecr.Repository{
+			{
+				RepositoryName: &repoName,
+			},
+		},
+
+		expectedImagesRepositoryName: repoName,
+		listImagesResult: []*ecr.ImageDetail{
+			{
+				ImageDigest: &imageDigest,
+			},
+		},
+
+		expectedImagesToRemove: []*ecr.ImageDetail{
+			{
+				ImageDigest: &imageDigest,
+			},
+		},
+	}
+
+	task := &core.CleanupTask{
+		KubeNamespaces:  []*string{&namespace},
+		EcrRepositories: []*string{&repoName},
+		DryRun:          true,
+
+		// Will cause the image to be deleted
+		MaxImages: 0,
+	}
+
+	errs := RemoveOldImages(task, kubeClient, ecrClient)
+
+	if len(errs) != 0 {
+		t.Errorf("Expected errors to be empty, but is %q", errs)
+	}
+}

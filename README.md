@@ -64,6 +64,8 @@ $ ./kube-ecr-cleanup-controller -h
 Usage of ./kube-ecr-cleanup-controller:
   -alsologtostderr
     	log to standard error as well as files
+  -dry-run
+    	Just log, don't delete any images. (default true)
   -interval int
     	Check interval in minutes. (default 30)
   -kubeconfig string
@@ -89,6 +91,20 @@ Usage of ./kube-ecr-cleanup-controller:
   -vmodule value
     	comma-separated list of pattern=N settings for file-filtered logging
 ```
+
+## Build Locally
+
+Assuming you have your Go environment already configured:
+
+    1. Clone this repository in `$GOPATH/src/github.com/danielfm/kube-ecr-cleanup-controller`
+
+    2. Run `glide i --strip-vendor` and then `make` to build the binary (or `make image` to build the docker image)
+
+    3. Then, just re-tag the image to `<your-name>/kube-ecr-cleanup-controller:<tag>` and push to your own registry, if you feel like it
+
+
+Or, you can use a pre-built image hosted in Docker Hub:
+https://hub.docker.com/r/danielfm/kube-ecr-cleanup-controller/o
 
 ## Donate
 

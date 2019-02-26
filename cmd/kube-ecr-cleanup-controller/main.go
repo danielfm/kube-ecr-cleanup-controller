@@ -32,6 +32,7 @@ func init() {
 	flag.IntVar(&task.MaxImages, "max-images", task.MaxImages, "Maximum number of images to keep in each repository.")
 	flag.StringVar(&reposStr, "repos", reposStr, "Comma-separated list of repository names to watch.")
 	flag.StringVar(&task.AwsRegion, "region", task.AwsRegion, "AWS Region to use when talking to AWS.")
+	flag.BoolVar(&task.DryRun, "dry-run", task.DryRun, "Just log, don't delete any images.")
 
 	flag.Parse()
 

@@ -22,12 +22,16 @@ type CleanupTask struct {
 
 	// Images used by pods running in these namespaces will not get deleted.
 	KubeNamespaces []*string
+
+	DryRun bool
 }
 
+// NewCleanupTask creates a CleanupTask with default values.
 func NewCleanupTask() *CleanupTask {
 	return &CleanupTask{
 		Interval:  30,
 		MaxImages: 900,
 		AwsRegion: "us-east-1",
+		DryRun:    false,
 	}
 }
