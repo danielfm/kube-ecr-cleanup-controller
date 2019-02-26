@@ -31,7 +31,7 @@ func init() {
 	flag.IntVar(&task.Interval, "interval", task.Interval, "check interval, in minutes.")
 	flag.IntVar(&task.MaxImages, "max-images", task.MaxImages, "maximum number of images to keep in each repository.")
 	flag.StringVar(&reposStr, "repos", reposStr, "comma-separated list of repository names to watch.")
-	flag.StringVar(&task.AwsRegion, "region", task.AwsRegion, "AWS Region to use when talking to AWS.")
+	flag.StringVar(&task.AwsRegion, "region", task.AwsRegion, "region to use when talking to AWS.")
 	flag.BoolVar(&task.DryRun, "dry-run", task.DryRun, "just log, don't delete any images.")
 	flag.StringVar(&registryID, "registry-id", registryID, "specify a registry account ID. If not specified, uses the account ID of the credentials passed.")
 

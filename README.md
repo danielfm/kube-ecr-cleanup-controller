@@ -61,35 +61,37 @@ clean up with this controller.
 
 ```
 $ ./kube-ecr-cleanup-controller -h
-Usage of bin/kube-ecr-cleanup-controller:
+Usage of ./bin/kube-ecr-cleanup-controller:
   -alsologtostderr
-        log to standard error as well as files
+    	log to standard error as well as files
   -dry-run
-        just log, don't delete any images.
+    	just log, don't delete any images.
   -interval int
-        check interval, in minutes. (default 30)
+    	check interval, in minutes. (default 30)
   -kubeconfig string
-        path to a kubeconfig file.
+    	path to a kubeconfig file.
   -log_backtrace_at value
-        when logging hits line file:N, emit a stack trace
+    	when logging hits line file:N, emit a stack trace
   -log_dir string
-        If non-empty, write log files in this directory
+    	If non-empty, write log files in this directory
   -logtostderr
-        log to standard error instead of files
+    	log to standard error instead of files
   -max-images int
-        maximum number of images to keep in each repository. (default 900)
+    	maximum number of images to keep in each repository. (default 900)
   -namespaces string
-        do not remove images used by pods in this comma-separated list of namespaces. (default "default")
+    	do not remove images used by pods in this comma-separated list of namespaces. (default "default")
   -region string
-        AWS Region to use when talking to AWS. (default "us-east-1")
+    	region to use when talking to AWS. (default "us-east-1")
+  -registry-id string
+    	specify a registry account ID. If not specified, uses the account ID of the credentials passed.
   -repos string
-        comma-separated list of repository names to watch.
+    	comma-separated list of repository names to watch.
   -stderrthreshold value
-        logs at or above this threshold go to stderr
+    	logs at or above this threshold go to stderr
   -v value
-        log level for V logs
+    	log level for V logs
   -vmodule value
-        comma-separated list of pattern=N settings for file-filtered logging
+    	comma-separated list of pattern=N settings for file-filtered logging
 ```
 
 ## Build Locally
