@@ -22,7 +22,7 @@ var task *core.CleanupTask
 var VERSION = "UNKNOWN"
 
 func init() {
-	namespacesStr, reposStr := "default", ""
+	namespacesStr, reposStr, registryID := "default", "", ""
 
 	task = core.NewCleanupTask()
 
@@ -33,6 +33,7 @@ func init() {
 	flag.StringVar(&reposStr, "repos", reposStr, "comma-separated list of repository names to watch.")
 	flag.StringVar(&task.AwsRegion, "region", task.AwsRegion, "AWS Region to use when talking to AWS.")
 	flag.BoolVar(&task.DryRun, "dry-run", task.DryRun, "just log, don't delete any images.")
+	flag.StringVar(&registryID, "registry-id", registryID, "specify a registry account ID. If not specified, uses the account ID of the credentials passed.")
 
 	flag.Parse()
 
@@ -51,6 +52,12 @@ func init() {
 	}
 	if len(repositories) == 0 {
 		glog.Fatalf("Must specify at least one repository to watch, exiting.")
+	}
+
+	if len(registryID) == 0 {
+		task.RegistryID = nil
+	} else {
+		task.RegistryID = &registryID
 	}
 
 	task.KubeNamespaces = namespaces
