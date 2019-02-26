@@ -12,6 +12,7 @@ import (
 	"github.com/danielfm/kube-ecr-cleanup-controller/pkg/kubernetes"
 )
 
+// ImageCleanupLoop runs the image cleanup repeatedly at an interval.
 func ImageCleanupLoop(t *core.CleanupTask, done chan struct{}, wg *sync.WaitGroup) {
 	go func() {
 		ecrClient := aws.NewECRClient(t.AwsRegion)
@@ -39,6 +40,7 @@ func ImageCleanupLoop(t *core.CleanupTask, done chan struct{}, wg *sync.WaitGrou
 	}()
 }
 
+// RemoveOldImages deletes ECR images that have been determined to be old.
 func RemoveOldImages(t *core.CleanupTask, kubeClient kubernetes.KubernetesClient, ecrClient aws.ECRClient) []error {
 	errors := []error{}
 
@@ -71,6 +73,7 @@ func RemoveOldImages(t *core.CleanupTask, kubeClient kubernetes.KubernetesClient
 		}
 		glog.Infof("Number of images in ECR repo: %d", len(images))
 
+		glog.V(10).Infof("Max Images is %d", t.MaxImages)
 		unusedOldImages := aws.FilterOldUnusedImages(t.MaxImages, images, usedImages[repoName])
 
 		if len(unusedOldImages) == 0 {
@@ -78,10 +81,15 @@ func RemoveOldImages(t *core.CleanupTask, kubeClient kubernetes.KubernetesClient
 			continue
 		}
 
-		glog.Infof("Removing %d old unused images.", len(unusedOldImages))
-		if err = ecrClient.BatchRemoveImages(unusedOldImages); err != nil {
-			errors = append(errors, fmt.Errorf("Could not batch remove images from repo '%s': %v", repoName, err))
-			continue
+		if t.DryRun {
+			glog.Info("Not deleting images due to dry-run being set")
+			glog.Infof("Would have removed %d images.", len(unusedOldImages))
+		} else {
+			glog.Infof("Removing %d old unused images.", len(unusedOldImages))
+			if err = ecrClient.BatchRemoveImages(unusedOldImages); err != nil {
+				errors = append(errors, fmt.Errorf("Could not batch remove images from repo '%s': %v", repoName, err))
+				continue
+			}
 		}
 	}
 
