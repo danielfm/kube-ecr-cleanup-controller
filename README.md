@@ -68,6 +68,8 @@ Usage of ./bin/kube-ecr-cleanup-controller:
     	just log, don't delete any images.
   -interval int
     	check interval, in minutes. (default 30)
+  -keep-filters string
+        specify a filter or regex that when matched will preserve the matching images.
   -kubeconfig string
     	path to a kubeconfig file.
   -log_backtrace_at value
