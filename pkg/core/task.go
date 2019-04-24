@@ -26,14 +26,17 @@ type CleanupTask struct {
 	DryRun bool
 
 	RegistryID *string
+
+	KeepFilters []*string
 }
 
 // NewCleanupTask creates a CleanupTask with default values.
 func NewCleanupTask() *CleanupTask {
 	return &CleanupTask{
-		Interval:  30,
-		MaxImages: 900,
-		AwsRegion: "us-east-1",
-		DryRun:    false,
+		Interval:    30,
+		MaxImages:   900,
+		AwsRegion:   "us-east-1",
+		DryRun:      false,
+		KeepFilters: []*string{},
 	}
 }

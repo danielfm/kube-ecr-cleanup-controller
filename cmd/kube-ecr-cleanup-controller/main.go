@@ -1,19 +1,17 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 
-	"flag"
-
-	"github.com/golang/glog"
-
 	"github.com/danielfm/kube-ecr-cleanup-controller/pkg/core"
 	"github.com/danielfm/kube-ecr-cleanup-controller/pkg/processor"
 	"github.com/danielfm/kube-ecr-cleanup-controller/pkg/utils"
+	"github.com/golang/glog"
 )
 
 var task *core.CleanupTask
@@ -22,7 +20,7 @@ var task *core.CleanupTask
 var VERSION = "UNKNOWN"
 
 func init() {
-	namespacesStr, reposStr, registryID := "default", "", ""
+	namespacesStr, reposStr, registryID, keepFiltersStr := "default", "", "", ""
 
 	task = core.NewCleanupTask()
 
@@ -34,6 +32,7 @@ func init() {
 	flag.StringVar(&task.AwsRegion, "region", task.AwsRegion, "region to use when talking to AWS.")
 	flag.BoolVar(&task.DryRun, "dry-run", task.DryRun, "just log, don't delete any images.")
 	flag.StringVar(&registryID, "registry-id", registryID, "specify a registry account ID. If not specified, uses the account ID of the credentials passed.")
+	flag.StringVar(&keepFiltersStr, "keep-filters", keepFiltersStr, "comma-separated list of filters or regexes that when matched will preserve the matching images.")
 
 	flag.Parse()
 
@@ -46,6 +45,7 @@ func init() {
 
 	namespaces := utils.ParseCommaSeparatedList(namespacesStr)
 	repositories := utils.ParseCommaSeparatedList(reposStr)
+	keepFilters := utils.ParseCommaSeparatedList(keepFiltersStr)
 
 	if len(namespaces) == 0 {
 		glog.Fatalf("Must specify at least one namespace, exiting.")
@@ -62,6 +62,7 @@ func init() {
 
 	task.KubeNamespaces = namespaces
 	task.EcrRepositories = repositories
+	task.KeepFilters = keepFilters
 }
 
 func main() {

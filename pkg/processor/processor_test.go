@@ -5,10 +5,8 @@ import (
 	"testing"
 
 	"github.com/aws/aws-sdk-go/service/ecr"
-
-	apiv1 "k8s.io/api/core/v1"
-
 	"github.com/danielfm/kube-ecr-cleanup-controller/pkg/core"
+	apiv1 "k8s.io/api/core/v1"
 )
 
 // mockKubeClient is used to verify that the Kubernetes client is being called
@@ -300,6 +298,75 @@ func TestRemoveOldImagesWithECRBatchRemoveImagesError(t *testing.T) {
 
 	if len(errs) == 0 {
 		t.Errorf("Expected errors to contain 1 element, but it contains %d", len(errs))
+	}
+}
+
+func TestRemoveOldImagesWithKeepFilter(t *testing.T) {
+	namespace, repoName, imageDigest := "namespace", "repo", "image-digest"
+	kubeClient := &mockKubeClient{
+		t: t,
+
+		expectedNamespace: []string{namespace},
+		listAllPodsResult: []*apiv1.Pod{
+			{
+				Spec: apiv1.PodSpec{
+					Containers: []apiv1.Container{
+						{
+							Image: "id.dkr.ecr.region.amazonaws.com/repo:tag-1",
+						},
+					},
+				},
+			},
+			{
+				Spec: apiv1.PodSpec{
+					Containers: []apiv1.Container{
+						{
+							Image: "id.dkr.ecr.region.amazonaws.com/repo:keep-1",
+						},
+					},
+				},
+			},
+		},
+	}
+
+	ecrClient := &mockECRClient{
+		t: t,
+
+		expectedRepositoryNames: []string{repoName},
+		listRepositoriesResult: []*ecr.Repository{
+			{
+				RepositoryName: &repoName,
+			},
+		},
+
+		expectedImagesRepositoryName: repoName,
+		listImagesResult: []*ecr.ImageDetail{
+			{
+				ImageDigest: &imageDigest,
+			},
+		},
+
+		expectedImagesToRemove: []*ecr.ImageDetail{
+			{
+				ImageDigest: &imageDigest,
+			},
+		},
+	}
+
+	keep := "keep"
+	task := &core.CleanupTask{
+		KubeNamespaces:  []*string{&namespace},
+		EcrRepositories: []*string{&repoName},
+
+		// Will cause the image to be deleted
+		MaxImages:   0,
+		KeepFilters: []*string{&keep},
+	}
+
+	errs := RemoveOldImages(task, kubeClient, ecrClient)
+
+	if len(errs) != 0 {
+		t.Errorf("Expected errors to be empty, but is %q", errs)
 	}
 }
 
