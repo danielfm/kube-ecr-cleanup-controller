@@ -86,6 +86,24 @@ func TestECRImagesFromPods(t *testing.T) {
 			},
 		},
 
+		// Works for ECR image with a namespace
+		{
+			pods: []*apiv1.Pod{
+				{
+					Spec: apiv1.PodSpec{
+						Containers: []apiv1.Container{
+							{
+								Image: "id.dkr.ecr.region.amazonaws.com/namespace/repo-1:tag-2",
+							},
+						},
+					},
+				},
+			},
+			expected: map[string][]string{
+				"namespace/repo-1": []string{"tag-2"},
+			},
+		},
+
 		// Ignore non-ECR image
 		{
 			pods: []*apiv1.Pod{

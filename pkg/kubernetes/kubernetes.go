@@ -76,7 +76,7 @@ func ECRImagesFromPods(pods []*apiv1.Pod) map[string][]string {
 	encountered := map[string]bool{}
 
 	// Only matches tagged images hosted on ECR
-	re := regexp.MustCompile(`^.*\.dkr\.ecr\.[^\.]+\.amazonaws\.com/([^:/]+):(.*)$`)
+	re := regexp.MustCompile(`^.*\.dkr\.ecr\.[^\.]+\.amazonaws\.com/([^:]+):(.*)$`)
 
 	for _, pod := range pods {
 		podContainers := append(pod.Spec.InitContainers, pod.Spec.Containers...)
