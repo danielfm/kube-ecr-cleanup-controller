@@ -1,6 +1,7 @@
 package kubernetes
 
 import (
+	"context"
 	"regexp"
 
 	"k8s.io/client-go/kubernetes"
@@ -51,18 +52,15 @@ func NewKubernetesClient(kubeconfig string) (*KubernetesClientImpl, error) {
 
 // ListAllPods returns all pods from the given namespaces.
 func (c *KubernetesClientImpl) ListAllPods(namespace []*string) ([]*apiv1.Pod, error) {
-	opts := metav1.ListOptions{}
 	pods := []*apiv1.Pod{}
 
-	for _, ns := range namespace {
-		podList, err := c.clientset.Core().Pods(*ns).List(opts)
-		if err != nil {
-			return nil, err
-		}
+	podList, err := c.clientset.CoreV1().Pods("").List(context.TODO(), metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
 
-		for i := range podList.Items {
-			pods = append(pods, &podList.Items[i])
-		}
+	for i := range podList.Items {
+		pods = append(pods, &podList.Items[i])
 	}
 
 	return pods, nil
