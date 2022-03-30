@@ -101,7 +101,7 @@ Usage of ./bin/kube-ecr-cleanup-controller:
 Assuming you have your Go environment already configured:
 
 1. Clone this repository in `$GOPATH/src/github.com/danielfm/kube-ecr-cleanup-controller`
-2. Run `glide i --strip-vendor` and then `make` to build the Linux binary (or `make image` to build the Docker image)
+2. Run `make build` to build the Linux binary, or `make image` to build the Docker image
 3. Then, just re-tag the image to `<your-name>/kube-ecr-cleanup-controller:<tag>` and push to your own registry, if you feel like it
 
 Or, you can use a pre-built image hosted in Docker Hub:

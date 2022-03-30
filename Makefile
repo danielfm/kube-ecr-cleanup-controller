@@ -3,8 +3,12 @@ TAG=0.1.7
 BIN=kube-ecr-cleanup-controller
 IMAGE=danielfm/$(BIN)
 
+.PHONY: deps
+deps:
+	$(GO) mod tidy
+
 .PHONY: build
-build:
+build: deps
 	$(GO) build -a --ldflags "-X main.VERSION=$(TAG) -w -extldflags '-static'" -tags netgo -o bin/$(BIN) ./cmd/$(BIN)
 
 .PHONY: image
