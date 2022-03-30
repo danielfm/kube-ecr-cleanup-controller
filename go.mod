@@ -1,4 +1,4 @@
-module github.com/notnmeyer/kube-ecr-cleanup-controller
+module github.com/danielfm/kube-ecr-cleanup-controller
 
 go 1.17
 
