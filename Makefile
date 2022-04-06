@@ -1,5 +1,5 @@
 GO=CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go
-TAG=0.1.8
+TAG=0.1.9
 BIN=kube-ecr-cleanup-controller
 IMAGE=danielfm/$(BIN)
 
