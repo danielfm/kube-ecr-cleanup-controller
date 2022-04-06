@@ -63,8 +63,8 @@ func NewECRClient(region string) *ECRClientImpl {
 	creds := credentials.NewChainCredentials(
 		[]credentials.Provider{
 			&credentials.EnvProvider{},
-			&credentials.SharedCredentialsProvider{},
 			&stscreds.WebIdentityRoleProvider{},
+			&credentials.SharedCredentialsProvider{},
 			&ec2rolecreds.EC2RoleProvider{
 				Client: ec2metadata.New(sess),
 			},
