@@ -7,6 +7,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/credentials/ec2rolecreds"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ecr"
@@ -55,11 +56,14 @@ func NewECRClient(region string) *ECRClientImpl {
 	awsConfig := aws.NewConfig()
 	awsConfig.WithRegion(region)
 
-	sess := session.New(awsConfig)
+	sess := session.Must(
+		session.NewSession(awsConfig),
+	)
 
 	creds := credentials.NewChainCredentials(
 		[]credentials.Provider{
 			&credentials.EnvProvider{},
+			&stscreds.WebIdentityRoleProvider{},
 			&credentials.SharedCredentialsProvider{},
 			&ec2rolecreds.EC2RoleProvider{
 				Client: ec2metadata.New(sess),
