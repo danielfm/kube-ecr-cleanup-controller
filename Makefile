@@ -1,5 +1,5 @@
 GO=CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go
-TAG=0.1.10
+TAG=0.1.11
 BIN=kube-ecr-cleanup-controller
 IMAGE=danielfm/$(BIN)
 
@@ -13,16 +13,16 @@ build: deps
 
 .PHONY: image
 image: build
-	podman build -t $(IMAGE):$(TAG) .
+	docker build -t $(IMAGE):$(TAG) .
 
 .PHONY: push
 push: image
-	podman push $(IMAGE):$(TAG)
+	docker push $(IMAGE):$(TAG)
 
 .PHONY: push-latest
 push-latest: image
-	podman tag $(IMAGE):$(TAG) $(IMAGE):latest
-	podman push $(IMAGE):latest
+	docker tag $(IMAGE):$(TAG) $(IMAGE):latest
+	docker push $(IMAGE):latest
 
 .PHONY: clean
 clean:
